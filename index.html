@@ -1,0 +1,1403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crazy Eights</title>
+<style>
+:root {
+  --felt-light: #1f7046;
+  --felt-dark: #0b3320;
+  --ink: #f7f4ec;
+  --muted: #b8cbbe;
+  --panel: rgba(0, 0, 0, 0.3);
+  --line: rgba(255, 255, 255, 0.12);
+  --gold: #f2c14e;
+  --red: #c62c2c;
+  --black: #1c1c22;
+  --card-w: 80px;
+  --card-h: 114px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: radial-gradient(ellipse at 50% 0%, var(--felt-light), var(--felt-dark) 75%) no-repeat fixed;
+  background-color: var(--felt-dark);
+  overflow-x: hidden;
+}
+button, select, input { font: inherit; }
+button { cursor: pointer; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+
+/* ---------- top bar and banner ---------- */
+.topbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px 16px; padding: 12px 16px;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.brand { font-size: 1.35rem; font-weight: 800; letter-spacing: .02em; }
+.brand span { color: var(--gold); }
+.meta { color: var(--muted); font-size: .92rem; flex: 1 1 auto; text-align: center; }
+.top-actions { display: flex; gap: 8px; }
+.banner {
+  position: sticky; top: 0; z-index: 25; padding: 8px 16px; text-align: center;
+  background: #5b4a12; color: #ffe7a3; font-weight: 600;
+}
+
+.btn {
+  padding: 9px 16px; border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .25);
+  background: rgba(255, 255, 255, .12); color: var(--ink);
+  font-weight: 600; transition: background .15s;
+}
+.btn:hover:not(:disabled) { background: rgba(255, 255, 255, .22); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.primary { background: var(--gold); border-color: transparent; color: #2b1f00; }
+.btn.primary:hover:not(:disabled) { background: #ffd66b; }
+.btn.small { padding: 5px 10px; font-size: .85rem; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+
+/* ---------- menus and forms ---------- */
+.setup { max-width: 540px; margin: 22px auto; width: calc(100% - 32px); }
+.setup h2 { margin: 0 0 6px; font-size: 1.4rem; }
+.setup .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 14px 0; }
+.setup label {
+  flex: 1 1 180px; display: flex; flex-direction: column; gap: 6px;
+  color: var(--muted); font-size: .9rem;
+}
+select, input {
+  padding: 9px 10px; border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  background: rgba(0, 0, 0, .3); color: var(--ink);
+}
+.seat-rows { display: flex; flex-direction: column; gap: 8px; }
+.seat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.error { color: #ffb3a7; min-height: 1.2em; margin: 8px 0 0; }
+.notice { color: #ffe7a3; min-height: 1.2em; margin: 10px 0 0; }
+.hr { border: none; border-top: 1px solid var(--line); margin: 18px 0; }
+.mode-grid { display: grid; gap: 12px; margin-top: 14px; }
+.mode-btn {
+  text-align: left; display: flex; flex-direction: column; gap: 6px;
+  padding: 16px; border-radius: 14px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .06); color: var(--ink);
+}
+.mode-btn strong { font-size: 1.05rem; }
+.mode-btn span { color: var(--muted); font-size: .9rem; line-height: 1.4; }
+.mode-btn:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
+.code { color: var(--gold); letter-spacing: .15em; }
+.invite {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: rgba(0, 0, 0, .25); border-radius: 10px; padding: 10px 12px; margin: 12px 0 4px;
+}
+.invite span { flex: 1 1 200px; word-break: break-all; font-size: .9rem; color: var(--muted); }
+.lobby-seats { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.lobby-seat {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
+}
+.lobby-seat .name { flex: 1; font-weight: 600; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #7a7a7a; }
+.dot.on { background: #5fd47c; }
+.hint { color: var(--muted); font-size: .85rem; margin: 8px 0 0; text-align: center; }
+
+.actions { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.setup .actions { justify-content: flex-end; margin-top: 12px; }
+.setup .actions.start { justify-content: space-between; }
+
+/* ---------- game screen ---------- */
+.game {
+  max-width: 980px; margin: 0 auto; padding: 14px 16px 24px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.seats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.seat {
+  min-width: 150px; padding: 8px 12px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--line);
+  transition: box-shadow .2s, border-color .2s, opacity .2s;
+}
+.seat.active { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(242, 193, 78, .35); }
+.seat.offline { opacity: .6; }
+.seat .name { font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tag {
+  font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 6px; background: rgba(255, 255, 255, .14); color: var(--muted);
+}
+.tag.you { background: var(--gold); color: #2b1f00; }
+.tag.off { background: #7a2a2a; color: #ffd9d4; }
+.tag.warn { background: #7a5a1a; color: #ffe7a3; }
+.ping { font-weight: 700; }
+.ping.good { color: #7be89a; }
+.ping.ok { color: var(--gold); }
+.ping.bad { color: #ff8a8a; }
+.seat .sub { color: var(--muted); font-size: .85rem; margin-top: 3px; }
+
+.table { display: flex; justify-content: center; align-items: flex-start; gap: 36px; flex-wrap: wrap; padding: 6px 0; }
+.pile { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pile-label { color: var(--muted); font-size: .85rem; }
+.suit-badge {
+  padding: 4px 14px; border-radius: 999px; background: #fffdf7;
+  color: var(--black); font-weight: 800; font-size: 1.05rem;
+}
+.suit-badge.red { color: var(--red); }
+
+.status { flex: 1 1 260px; text-align: center; font-weight: 600; min-height: 1.4em; }
+.log {
+  width: min(600px, 100%); align-self: center; height: 130px; overflow-y: auto;
+  padding: 8px 12px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--line);
+  font-size: .88rem; color: var(--muted);
+}
+.log p { margin: 3px 0; }
+.log p:last-child { color: var(--ink); }
+.hand-label { text-align: center; color: var(--muted); font-size: .92rem; }
+.hand {
+  display: flex; align-items: flex-end;
+  min-height: calc(var(--card-h) + 36px);
+  padding: 16px 12px 12px; overflow-x: auto;
+}
+.hand > :first-child { margin-left: auto; }
+.hand > :last-child { margin-right: auto; }
+.hidden-hand { color: var(--muted); padding: 30px 10px; text-align: center; }
+
+/* ---------- cards ---------- */
+.card {
+  position: relative; flex: 0 0 auto;
+  width: var(--card-w); height: var(--card-h);
+  border-radius: calc(var(--card-w) * .12);
+  background: #fffdf7; color: var(--black);
+  border: 1px solid rgba(0, 0, 0, .2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .35);
+  user-select: none;
+}
+.card.red { color: var(--red); }
+.card .corner {
+  position: absolute; display: flex; flex-direction: column; align-items: center;
+  font-weight: 800; line-height: 1; font-size: calc(var(--card-w) * .18);
+}
+.card .corner i { font-style: normal; font-size: calc(var(--card-w) * .16); }
+.card .corner.tl { top: calc(var(--card-w) * .07); left: calc(var(--card-w) * .08); }
+.card .corner.br { right: calc(var(--card-w) * .08); bottom: calc(var(--card-w) * .07); transform: rotate(180deg); }
+.card .pip {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: calc(var(--card-w) * .5);
+}
+.card.back {
+  background: repeating-linear-gradient(45deg, #1d3c86 0 7px, #2d55b8 7px 14px);
+  border: 4px solid #fffdf7;
+  box-shadow: 1px 1px 0 #142a66, 2px 2px 0 #fffdf7, 3px 3px 0 #142a66, 0 6px 12px rgba(0, 0, 0, .35);
+}
+.card.empty { background: transparent; box-shadow: none; border: 2px dashed rgba(255, 255, 255, .35); }
+.card.clickable { cursor: pointer; }
+.card.clickable:hover { transform: translateY(-3px); }
+
+.hand .card { transition: transform .15s ease; }
+.hand .card + .card { margin-left: calc(var(--card-w) * -0.36); }
+.hand .card:hover { z-index: 2; }
+.hand .card:not(.playable) { filter: brightness(.9); }
+.hand .card.playable { cursor: pointer; box-shadow: 0 0 0 3px var(--gold), 0 6px 14px rgba(0, 0, 0, .4); }
+.hand .card.playable:hover { transform: translateY(-14px); }
+
+/* ---------- modal and toast ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 20; padding: 16px;
+  background: rgba(0, 0, 0, .6);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  width: min(440px, 100%); max-height: 90vh; overflow-y: auto; padding: 20px;
+  border-radius: 16px; background: #14412b; border: 1px solid rgba(255, 255, 255, .18);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+}
+.modal h3 { margin: 0 0 8px; font-size: 1.25rem; }
+.modal p { margin: 0 0 12px; color: var(--muted); line-height: 1.45; }
+.modal .actions { justify-content: flex-end; margin-top: 16px; }
+.suit-choices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.suit-choices button {
+  font-size: 2.2rem; line-height: 1; padding: 14px 0; border: none; border-radius: 12px;
+  background: #fffdf7; color: var(--black);
+}
+.suit-choices button.red { color: var(--red); }
+.suit-choices button:hover { transform: translateY(-2px); }
+.score-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.score-table th, .score-table td { padding: 7px 4px; text-align: left; border-bottom: 1px solid var(--line); }
+.score-table th { color: var(--muted); font-weight: 600; }
+.rules { padding-left: 20px; margin: 0; color: var(--ink); line-height: 1.5; }
+.rules li + li { margin-top: 6px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 30;
+  max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 10px;
+  background: #6b1f1f; color: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+}
+
+/* ---------- small screens ---------- */
+@media (max-width: 600px) {
+  :root { --card-w: 62px; --card-h: 88px; }
+  .hand .card + .card { margin-left: calc(var(--card-w) * -0.55); }
+  .table { gap: 18px; }
+  .meta { text-align: left; }
+  .suit-badge { font-size: .95rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Crazy <span>Eights</span></div>
+  <div class="meta" id="meta"></div>
+  <div class="top-actions">
+    <button class="btn" id="rulesBtn">Rules</button>
+    <button class="btn hidden" id="menuBtn">New game</button>
+  </div>
+</header>
+<div class="banner hidden" id="banner" role="status"></div>
+
+<!-- Mode choice -->
+<section class="panel setup" id="menu">
+  <h2>Crazy Eights</h2>
+  <p class="muted">Match the top card by suit or rank. 8s are wild. Score points from the cards left in everyone else's hands.</p>
+  <div class="mode-grid">
+    <button class="mode-btn" id="modeLocal">
+      <strong>Play on this device</strong>
+      <span>Pass one screen around for human players; computer seats fill the rest.</span>
+    </button>
+    <button class="mode-btn" id="modeOnline">
+      <strong>Play online with friends</strong>
+      <span>Create a room and send friends the link. Everyone plays from their own device. Nothing to install.</span>
+    </button>
+  </div>
+  <div class="actions">
+    <button class="btn primary hidden" id="rejoinBtn"></button>
+    <button class="btn hidden" id="reopenBtn"></button>
+  </div>
+  <p class="notice" id="menuNotice"></p>
+</section>
+
+<!-- Local setup -->
+<section class="panel setup hidden" id="setup">
+  <h2>Set up a match</h2>
+  <div class="row">
+    <label>Players
+      <select id="count">
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+    </label>
+    <label>First to
+      <select id="target">
+        <option value="50">50 points</option>
+        <option value="100">100 points</option>
+        <option value="200">200 points</option>
+      </select>
+    </label>
+  </div>
+  <div class="seat-rows" id="seatRows"></div>
+  <p class="muted small">Several humans can share this device: the game asks each person to take over before their turn.</p>
+  <p class="error" id="setupMsg"></p>
+  <div class="actions start">
+    <button class="btn" id="setupBack">Back</button>
+    <button class="btn primary" id="startBtn">Deal the cards</button>
+  </div>
+</section>
+
+<!-- Online: create or join -->
+<section class="panel setup hidden" id="online">
+  <h2>Play online</h2>
+  <p class="muted">Create a room and send friends the invite link, or join a friend's room with its code.</p>
+  <label>Your name
+    <input type="text" id="onlineName" maxlength="16" placeholder="Your name">
+  </label>
+  <div class="actions"><button class="btn primary" id="createBtn">Create a room</button></div>
+  <hr class="hr">
+  <label>Room code
+    <input type="text" id="joinCode" maxlength="4" placeholder="ABCD" autocomplete="off">
+  </label>
+  <div class="actions">
+    <button class="btn hidden" id="cancelJoinBtn">Cancel</button>
+    <button class="btn" id="joinBtn">Join room</button>
+  </div>
+  <p class="error" id="onlineMsg"></p>
+  <div class="actions"><button class="btn" id="onlineBack">Back</button></div>
+</section>
+
+<!-- Online: waiting room -->
+<section class="panel setup hidden" id="lobby">
+  <h2>Room <span class="code" id="roomCode"></span></h2>
+  <div class="invite">
+    <span id="inviteLink"></span>
+    <button class="btn small" id="copyBtn">Copy invite link</button>
+  </div>
+  <p class="muted small" id="inviteHelp"></p>
+  <div class="lobby-seats" id="lobbySeats"></div>
+  <p class="notice" id="lockNote"></p>
+  <div id="hostControls">
+    <div class="row">
+      <label>First to
+        <select id="lobbyTarget">
+          <option value="50">50 points</option>
+          <option value="100">100 points</option>
+          <option value="200">200 points</option>
+        </select>
+      </label>
+    </div>
+    <div class="actions">
+      <button class="btn" id="addCpuBtn">Add computer player</button>
+      <button class="btn" id="lockBtn">Lock room</button>
+      <button class="btn primary" id="startOnlineBtn">Start game</button>
+    </div>
+    <p class="hint" id="startHint"></p>
+  </div>
+  <p class="muted" id="guestNote">Waiting for the host to start the game.</p>
+</section>
+
+<!-- Game table (local and online) -->
+<main class="game hidden" id="game">
+  <div class="seats" id="seats"></div>
+  <div class="table">
+    <div class="pile">
+      <div class="card back" id="stock" title="Draw pile"></div>
+      <div class="pile-label" id="stockLabel"></div>
+    </div>
+    <div class="pile">
+      <div id="discard"></div>
+      <div class="suit-badge" id="suit"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <div class="status" id="status"></div>
+    <button class="btn" id="drawBtn">Draw</button>
+    <button class="btn" id="passBtn">Pass</button>
+    <button class="btn hidden" id="replaceBtn"></button>
+  </div>
+  <div class="log" id="log" aria-live="polite"></div>
+  <div class="hand-label" id="handLabel"></div>
+  <div class="hand" id="hand"></div>
+</main>
+
+<div class="toast hidden" id="toast" role="status"></div>
+
+<script src="core.js"></script>
+<script src="room.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const Core = window.CrazyEights;
+  const Room = window.CrazyEightsRoom;
+  const $ = id => document.getElementById(id);
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+
+  const SETUP_KEY = 'crazy-eights-setup';
+  const NAME_KEY = 'crazy-eights-name';
+  const SEAT_KEY = 'crazy-eights-seat';            // our seat in someone else's room
+  const HOST_KEY = 'crazy-eights-host';            // the room this browser hosts, kept so a reload can reopen it
+  const HOST_LOCK_KEY = 'crazy-eights-host-alive'; // refreshed while a tab hosts, so a second tab does not also host
+  const HOST_TTL_MS = 30 * 60 * 1000;              // a saved room nobody reopens within 30 minutes is forgotten
+  const HOST_LOCK_STALE_MS = 6000;
+  const PEER_PREFIX = 'crazy8-v1-';
+  const HEARTBEAT_MS = 3000;
+  const JOIN_TIMEOUT_MS = 12000;
+  const JOIN_ATTEMPTS = 3;
+  const RECONNECT_ATTEMPTS = 60;
+  const LIB_FAIL = "Couldn't load the online library. Check your internet connection, then refresh the page.";
+
+  // Same pinned PeerJS file and STUN servers as the other games. The hash makes the browser refuse a changed file.
+  const PEER_HASH = 'sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR';
+  const PEER_URLS = [
+    'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
+    'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js',
+  ];
+  const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:global.stun.twilio.com:3478' }, { urls: 'stun:stun.nextcloud.com:443' },
+  ];
+  const peerOpts = () => ({ debug: 0, config: { iceServers: ICE_SERVERS, iceCandidatePoolSize: 4 } });
+
+  const RULES = [
+    'Play a card that matches the top card by suit or by rank.',
+    '8s are wild: play one any time and choose the suit the next player must follow.',
+    "Can't play? Draw one card. If it works, you may play it; otherwise pass.",
+    'Get rid of all your cards to go out and win the round.',
+    'The winner scores every point left in the other hands: 8 = 50, A = 1, J/Q/K = 10, the rest = face value.',
+    'If nobody can play and the draw pile is empty, the round is blocked and the lowest hand wins it.',
+    'The first player to reach the target score wins the match.',
+  ];
+  const DEFAULT_SETUP = {
+    count: 4,
+    target: 100,
+    seats: [
+      { name: 'Player 1', type: 'human' },
+      { name: 'CPU 1', type: 'cpu' },
+      { name: 'CPU 2', type: 'cpu' },
+      { name: 'CPU 3', type: 'cpu' },
+    ],
+  };
+
+  // Tiny DOM builder: h('div', { class: 'x', onclick: fn }, child, [children...])
+  function h(tag, attrs = {}, ...kids) {
+    const node = document.createElement(tag);
+    for (const [key, val] of Object.entries(attrs)) {
+      if (val === null || val === undefined || val === false) continue;
+      if (key === 'class') node.className = val;
+      else if (key.startsWith('on')) node.addEventListener(key.slice(2), val);
+      else node.setAttribute(key, val === true ? '' : val);
+    }
+    for (const kid of kids.flat()) {
+      if (kid === null || kid === undefined || kid === false) continue;
+      node.append(kid instanceof Node ? kid : String(kid));
+    }
+    return node;
+  }
+
+  const APP = { mode: null };                       // 'local' | 'online' | null (menu)
+  const LOCAL = { game: null, viewer: 0, hideHand: false, lastTurn: -1, timer: null, setup: loadLocalSetup() };
+  // ONLINE.room / ONLINE.peer / ONLINE.beat / ONLINE.lock: the room this browser hosts (we are seat 0).
+  // ONLINE.seat / ONLINE.link: our seat as a guest (the code and token, and the live connection).
+  const ONLINE = {
+    room: null, peer: null, beat: null, lock: null,
+    seat: null, link: null, view: null,
+    cancelled: false, cancelPending: null,
+  };
+  let modalKey = null;
+  let toastTimer = null;
+
+  // ---------- the PeerJS library ----------
+  const loadPeerLib = (() => {
+    let running = null;
+    const tryOne = url => new Promise(done => {
+      const s = document.createElement('script');
+      const t = setTimeout(() => done(!!window.Peer), 7000);
+      s.src = url; s.integrity = PEER_HASH; s.crossOrigin = 'anonymous';
+      s.onload = () => { clearTimeout(t); done(!!window.Peer); };
+      s.onerror = () => { clearTimeout(t); s.remove(); done(false); };
+      document.head.appendChild(s);
+    });
+    return () => {
+      if (window.Peer) return Promise.resolve(true);
+      if (!running) running = (async () => {
+        for (const url of PEER_URLS) { if (await tryOne(url)) return true; }
+        return !!window.Peer;
+      })().finally(() => { running = null; });
+      return running;
+    };
+  })();
+
+  // ---------- screens ----------
+  const SCREENS = ['menu', 'setup', 'online', 'lobby', 'game'];
+
+  function showScreen(name) {
+    for (const s of SCREENS) $(s).classList.toggle('hidden', s !== name);
+    const inRoom = name === 'game' || name === 'lobby';
+    $('menuBtn').classList.toggle('hidden', !inRoom);
+    if (APP.mode === 'online') $('menuBtn').textContent = ONLINE.room ? 'Close room' : 'Leave room';
+    else $('menuBtn').textContent = 'New game';
+    if (!inRoom) $('meta').textContent = '';
+  }
+
+  function showMenu(notice = '') {
+    stopLocal();
+    APP.mode = null;
+    const seat = savedSeat();
+    $('rejoinBtn').classList.toggle('hidden', !seat);
+    $('rejoinBtn').textContent = seat ? `Rejoin room ${seat.code}` : '';
+    const hosted = savedHost();
+    const busy = !!hosted && hostElsewhere();
+    $('reopenBtn').classList.toggle('hidden', !hosted);
+    $('reopenBtn').disabled = busy;
+    $('reopenBtn').textContent = !hosted ? ''
+      : busy ? `Room ${hosted.code} is open in another tab`
+      : `Reopen your room ${hosted.code}`;
+    $('menuNotice').textContent = notice;
+    showScreen('menu');
+  }
+
+  function showLocalSetup() {
+    stopLocal();
+    APP.mode = 'local';
+    $('setupMsg').textContent = '';
+    renderSetupRows();
+    showScreen('setup');
+  }
+
+  function showOnlineScreen(prefillCode = '') {
+    $('onlineName').value = savedName();
+    $('joinCode').value = prefillCode;
+    $('onlineMsg').textContent = '';
+    showScreen('online');
+  }
+
+  // ---------- modals, toast and banner ----------
+  function openModal({ key, title, text, body = null, buttons = [] }) {
+    closeModal();
+    modalKey = key;
+    document.body.append(h('div', { class: 'modal-backdrop', id: 'modal' },
+      h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true' },
+        h('h3', {}, title),
+        text ? h('p', {}, text) : null,
+        body,
+        buttons.length ? h('div', { class: 'actions' },
+          buttons.map(b => h('button', { class: 'btn' + (b.primary ? ' primary' : ''), onclick: b.onClick }, b.label))) : null)));
+  }
+
+  function closeModal() {
+    modalKey = null;
+    document.getElementById('modal')?.remove();
+  }
+
+  // Opens the modal for `key` unless it is already showing. Transient modals (suit picker, rules) are left alone.
+  function syncModal(key, build) {
+    if (modalKey === key || modalKey === 'suit' || modalKey === 'rules') return;
+    closeModal();
+    if (key && build) build();
+  }
+
+  function toast(message) {
+    const el = $('toast');
+    el.textContent = message;
+    el.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+  }
+
+  // A banner stays on screen until it is cleared: used for "connection lost, trying again".
+  function setBanner(text) {
+    $('banner').textContent = text;
+    $('banner').classList.toggle('hidden', !text);
+  }
+
+  function openRules() {
+    openModal({
+      key: 'rules',
+      title: 'How to play',
+      body: h('ul', { class: 'rules' }, RULES.map(r => h('li', {}, r))),
+      // Closing Rules re-renders, so a round-end prompt that appeared meanwhile comes back.
+      buttons: [{ label: 'Got it', primary: true, onClick: () => { closeModal(); refreshView(); } }],
+    });
+  }
+
+  function refreshView() {
+    if (APP.mode === 'local' && LOCAL.game) localSync();
+    else if (APP.mode === 'online' && ONLINE.view) renderOnline();
+  }
+
+  function openSuitPicker(done) {
+    openModal({
+      key: 'suit',
+      title: 'Eight!',
+      text: 'Choose the suit the next player must match.',
+      body: h('div', { class: 'suit-choices' }, Core.SUITS.map(s => h('button', {
+        class: Core.isRed({ suit: s }) ? 'red' : '',
+        onclick: () => { closeModal(); done(s); },
+      }, s))),
+    });
+  }
+
+  function openPassOverlay(name, turn) {
+    openModal({
+      key: `pass:${turn}`,
+      title: `Pass to ${name}`,
+      text: 'Hand over the device. Only the next player should look at the screen.',
+      buttons: [{
+        label: `I'm ${name}, show my cards`,
+        primary: true,
+        onClick: () => { LOCAL.hideHand = false; localSync(); },
+      }],
+    });
+  }
+
+  function openEndModal(v) {
+    const key = `end:${v.round}:${v.phase}`;
+    const { winner, gained, blocked } = v.result;
+    const winnerName = v.seats[winner].name;
+    if (v.phase === 'matchOver') {
+      openModal({
+        key,
+        title: `${winnerName} wins the match!`,
+        text: `Reached ${v.seats[winner].score} points.`,
+        body: scoreTable(v),
+        buttons: [
+          { label: APP.mode === 'online' ? 'Back to lobby' : 'Back to setup', onClick: () => dispatch({ type: 'lobby' }) },
+          { label: 'Rematch', primary: true, onClick: () => dispatch({ type: 'rematch' }) },
+        ],
+      });
+    } else {
+      openModal({
+        key,
+        title: blocked ? 'Round blocked' : `${winnerName} went out!`,
+        text: `${winnerName} ${blocked ? 'had the lowest hand' : 'went out'} and scores ${gained} from the cards left in everyone else's hands.`,
+        body: scoreTable(v),
+        buttons: [{ label: 'Next round', primary: true, onClick: () => dispatch({ type: 'next' }) }],
+      });
+    }
+  }
+
+  function scoreTable(v) {
+    return h('table', { class: 'score-table' },
+      h('tr', {}, h('th', {}, 'Player'), h('th', {}, 'Cards left'), h('th', {}, 'Hand value'), h('th', {}, 'Total')),
+      v.seats.map((seat, i) => h('tr', {},
+        h('td', {}, seat.name, v.result && i === v.result.winner ? ' 🏆' : ''),
+        h('td', {}, seat.handCount),
+        h('td', {}, Core.handPoints(seat.hand || [])),
+        h('td', {}, seat.score))));
+  }
+
+  function syncModals(v, passSeat) {
+    if (v.phase === 'roundOver' || v.phase === 'matchOver') {
+      syncModal(`end:${v.round}:${v.phase}`, () => openEndModal(v));
+    } else if (passSeat) {
+      syncModal(`pass:${v.turn}`, () => openPassOverlay(passSeat.name, v.turn));
+    } else {
+      syncModal(null);
+    }
+  }
+
+  // ---------- shared rendering (local and online use the same view shape) ----------
+  function renderGame(v, { hidden, online }) {
+    const seat = v.seats[v.viewer];
+    const hand = seat.hand || [];
+    const myTurn = !hidden && v.phase === 'playing' && v.viewer === v.current && seat.type === 'human';
+    const legal = new Set(myTurn ? hand.filter(c => Core.canPlayWith(c, v.top, v.activeSuit)).map(c => c.id) : []);
+    $('meta').textContent = `${online ? `Room ${v.code} · ` : ''}Round ${v.round} · first to ${v.target}`;
+    renderSeats(v, online);
+    renderPiles(v);
+    renderControls(v, { hidden, online, myTurn, legalCount: legal.size });
+    renderLog(v);
+    renderHand(v, { hidden, legal, hand });
+  }
+
+  const pingClass = ms => (ms < 120 ? 'good' : ms < 250 ? 'ok' : 'bad');
+
+  function renderSeats(v, online) {
+    $('seats').replaceChildren(...v.seats.map((seat, i) => {
+      const isHuman = seat.type === 'human';
+      const offline = online && isHuman && seat.connected === false;
+      const classes = ['seat', i === v.current && v.phase === 'playing' ? 'active' : '', offline ? 'offline' : ''];
+      const showPing = online && isHuman && seat.connected !== false && seat.ping != null;
+      return h('div', { class: classes.join(' ').trim() },
+        h('div', { class: 'name' }, seat.name,
+          h('span', { class: 'tag' }, seat.type === 'cpu' ? 'CPU' : 'Human'),
+          online && i === v.viewer ? h('span', { class: 'tag you' }, 'You') : null,
+          seat.away ? h('span', { class: 'tag warn' }, 'Away') : null,
+          !seat.away && offline ? h('span', { class: 'tag off' }, 'Offline') : null),
+        h('div', { class: 'sub' },
+          `${seat.handCount} card${seat.handCount === 1 ? '' : 's'} · ${seat.score} pts`,
+          showPing ? h('span', { class: 'ping ' + pingClass(seat.ping) }, ` · ${seat.ping} ms`) : null));
+    }));
+  }
+
+  function renderPiles(v) {
+    $('stock').className = 'card back' + (v.canDraw ? '' : ' empty');
+    $('stockLabel').textContent = `Draw pile · ${v.stockCount}`;
+    $('discard').replaceChildren(cardEl(v.top));
+    const badge = $('suit');
+    badge.textContent = `Suit ${v.activeSuit}`;
+    badge.className = 'suit-badge' + (Core.isRed({ suit: v.activeSuit }) ? ' red' : '');
+  }
+
+  function renderControls(v, { hidden, online, myTurn, legalCount }) {
+    const drawNow = myTurn && !v.drawn && legalCount === 0 && v.canDraw;
+    const passNow = myTurn && (v.drawn || (legalCount === 0 && !v.canDraw));
+    $('drawBtn').disabled = !drawNow;
+    $('passBtn').disabled = !passNow;
+    $('stock').classList.toggle('clickable', drawNow);
+
+    const seat = v.seats[v.current];
+    const n = seat.name;
+    let msg;
+    if (v.phase === 'roundOver') msg = 'Round over.';
+    else if (v.phase === 'matchOver') msg = 'Match over.';
+    else if (seat.type === 'cpu') msg = `${n} is thinking…`;
+    else if (hidden) msg = `Waiting for ${n}…`;
+    else if (online && seat.away) msg = `${n} is away. The computer is playing their turns until they come back.`;
+    else if (online && seat.connected === false) msg = `${n} lost connection. The computer will play for them shortly.`;
+    else if (!myTurn) msg = `Waiting for ${n}…`;
+    else if (v.drawn) msg = legalCount ? `${n}, play the card you drew, or pass.` : `${n}, nothing to play. Pass the turn.`;
+    else if (legalCount) msg = `${n}, play a highlighted card. 8s are wild.`;
+    else if (v.canDraw) msg = `${n}, nothing matches. Draw a card.`;
+    else msg = `${n}, nothing matches and the pile is empty. Pass.`;
+    $('status').textContent = msg;
+
+    const canReplace = online && v.phase === 'playing' && seat.type === 'human' && seat.connected === false;
+    $('replaceBtn').classList.toggle('hidden', !canReplace);
+    $('replaceBtn').textContent = `Let a computer play for ${n} now`;
+  }
+
+  function renderLog(v) {
+    const box = $('log');
+    box.replaceChildren(...v.log.map(line => h('p', {}, line)));
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderHand(v, { hidden, legal, hand }) {
+    if (hidden) {
+      $('handLabel').textContent = '';
+      $('hand').replaceChildren(h('div', { class: 'hidden-hand' }, 'Cards are hidden until it is your turn.'));
+      return;
+    }
+    const seat = v.seats[v.viewer];
+    $('handLabel').textContent = `${seat.name}'s hand · ${hand.length} card${hand.length === 1 ? '' : 's'}`;
+    $('hand').replaceChildren(...hand.map(card => {
+      const ok = legal.has(card.id);
+      return cardEl(card, { playable: ok, onClick: ok ? () => playCardClick(card) : null });
+    }));
+  }
+
+  function cardEl(card, { playable = false, onClick = null } = {}) {
+    return h('div', {
+      class: `card${Core.isRed(card) ? ' red' : ''}${playable ? ' playable' : ''}`,
+      title: Core.label(card),
+      onclick: onClick,
+    },
+      h('span', { class: 'corner tl' }, h('b', {}, card.rank), h('i', {}, card.suit)),
+      h('span', { class: 'pip' }, card.suit),
+      h('span', { class: 'corner br' }, h('b', {}, card.rank), h('i', {}, card.suit)));
+  }
+
+  function playCardClick(card) {
+    if (card.rank === '8') return openSuitPicker(suit => dispatch({ type: 'play', cardId: card.id, suit }));
+    dispatch({ type: 'play', cardId: card.id });
+  }
+
+  // Every player action goes through dispatch: local applies it in the browser, online goes to the host.
+  function dispatch(action) {
+    if (APP.mode === 'online') return onlineDispatch(action);
+    return localDispatch(action);
+  }
+
+  // ---------- local (hot-seat) mode ----------
+  function loadLocalSetup() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETUP_KEY));
+      if (saved && Array.isArray(saved.seats) && saved.seats.length === 4 &&
+          [2, 3, 4].includes(saved.count) && [50, 100, 200].includes(saved.target)) return saved;
+    } catch { /* storage unavailable: use defaults */ }
+    return JSON.parse(JSON.stringify(DEFAULT_SETUP));
+  }
+
+  function saveLocalSetup() {
+    try { localStorage.setItem(SETUP_KEY, JSON.stringify(LOCAL.setup)); } catch { /* ignore */ }
+  }
+
+  function readSetupFromDom() {
+    LOCAL.setup.count = Number($('count').value);
+    LOCAL.setup.target = Number($('target').value);
+    document.querySelectorAll('#seatRows input').forEach(el => {
+      LOCAL.setup.seats[Number(el.dataset.i)].name = el.value.trim();
+    });
+    document.querySelectorAll('#seatRows select').forEach(el => {
+      LOCAL.setup.seats[Number(el.dataset.i)].type = el.value;
+    });
+  }
+
+  function renderSetupRows() {
+    $('count').value = String(LOCAL.setup.count);
+    $('target').value = String(LOCAL.setup.target);
+    $('seatRows').replaceChildren(...LOCAL.setup.seats.slice(0, LOCAL.setup.count).map((seat, i) =>
+      h('div', { class: 'seat-row' },
+        h('input', { type: 'text', maxlength: '16', value: seat.name, placeholder: `Seat ${i + 1} name`,
+          'aria-label': `Seat ${i + 1} name`, 'data-i': String(i) }),
+        h('select', {
+          'aria-label': `Seat ${i + 1} type`,
+          'data-i': String(i),
+          // Swap a default-looking name ("CPU 2" / "Player 2") when the seat type changes.
+          onchange: e => {
+            const name = e.target.closest('.seat-row').querySelector('input');
+            if (/^(CPU|Player) \d+$/.test(name.value)) name.value = `${e.target.value === 'cpu' ? 'CPU' : 'Player'} ${i + 1}`;
+          },
+        },
+          h('option', { value: 'human', selected: seat.type === 'human' }, 'Human (this device)'),
+          h('option', { value: 'cpu', selected: seat.type === 'cpu' }, 'Computer')))));
+  }
+
+  function startLocalMatch() {
+    readSetupFromDom();
+    saveLocalSetup();
+    const seats = LOCAL.setup.seats.slice(0, LOCAL.setup.count).map((s, i) => ({
+      name: s.name || (s.type === 'cpu' ? `CPU ${i + 1}` : `Player ${i + 1}`),
+      type: s.type,
+    }));
+    if (!seats.some(s => s.type === 'human')) {
+      $('setupMsg').textContent = 'Pick at least one human player.';
+      return;
+    }
+    $('setupMsg').textContent = '';
+    APP.mode = 'local';
+    LOCAL.game = Core.newMatch(seats, LOCAL.setup.target);
+    LOCAL.viewer = seats.findIndex(s => s.type === 'human');
+    LOCAL.hideHand = false;
+    LOCAL.lastTurn = -1;
+    showScreen('game');
+    localAfterChange();
+  }
+
+  function stopLocal() {
+    clearTimeout(LOCAL.timer);
+    LOCAL.timer = null;
+    LOCAL.game = null;
+    closeModal();
+  }
+
+  const localHumanCount = () => LOCAL.game.seats.filter(s => s.type === 'human').length;
+
+  function localAfterChange() {
+    clearTimeout(LOCAL.timer);
+    LOCAL.timer = null;
+    const g = LOCAL.game;
+    if (g.phase === 'playing' && g.seats[g.current].type === 'cpu') LOCAL.timer = setTimeout(localBot, 800);
+    localSync();
+  }
+
+  function localBot() {
+    LOCAL.timer = null;
+    const g = LOCAL.game;
+    if (!g || g.phase !== 'playing' || g.seats[g.current].type !== 'cpu') return;
+    const si = g.current;
+    Core.applyAction(g, si, Core.cpuAction(g, si));
+    localAfterChange();
+  }
+
+  function localSync() {
+    const g = LOCAL.game;
+    if (g.turn !== LOCAL.lastTurn) {
+      LOCAL.lastTurn = g.turn;
+      if (g.seats[g.current].type === 'human') {
+        LOCAL.viewer = g.current;
+        // With more than one human on the device, hide cards until the next person takes over.
+        LOCAL.hideHand = g.phase === 'playing' && localHumanCount() > 1;
+      } else {
+        LOCAL.hideHand = false;
+      }
+    }
+    const v = Core.view(g, LOCAL.viewer);
+    renderGame(v, { hidden: LOCAL.hideHand, online: false });
+    syncModals(v, LOCAL.hideHand && g.phase === 'playing' ? g.seats[g.current] : null);
+  }
+
+  function localDispatch(action) {
+    const g = LOCAL.game;
+    if (!g) return;
+    let result = null;
+    switch (action.type) {
+      case 'play':
+      case 'draw':
+      case 'pass':
+        result = Core.applyAction(g, g.current, action);
+        break;
+      case 'next':
+        result = Core.nextRound(g);
+        break;
+      case 'rematch':
+        result = Core.rematch(g);
+        break;
+      case 'lobby':
+        return showLocalSetup();
+    }
+    if (result && !result.ok) return toast(result.error);
+    localAfterChange();
+  }
+
+  // ---------- online: the host's side ----------
+  // The host's browser runs the room (see room.js). Guests reach it through PeerJS, which connects the two
+  // browsers directly; PeerJS's public matchmaking service only introduces them.
+  function showHostView(view) {
+    ONLINE.view = view;
+    renderOnline();
+  }
+
+  // The host's room is saved after every change, so a reloaded page can reopen it under the same code.
+  function saveHost(room) {
+    try { localStorage.setItem(HOST_KEY, JSON.stringify({ savedAt: Date.now(), snap: room.snapshot() })); } catch { /* ignore */ }
+  }
+
+  function savedHost() {
+    try {
+      const s = JSON.parse(localStorage.getItem(HOST_KEY));
+      if (!s || !s.snap) return null;
+      if (Date.now() - s.savedAt > HOST_TTL_MS) { clearHost(); return null; }
+      return s.snap;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearHost() {
+    try { localStorage.removeItem(HOST_KEY); } catch { /* ignore */ }
+  }
+
+  // True when another tab on this browser is hosting a room right now.
+  function hostElsewhere() {
+    if (ONLINE.room) return false;
+    const t = Number(localStorage.getItem(HOST_LOCK_KEY)) || 0;
+    return Date.now() - t < HOST_LOCK_STALE_MS;
+  }
+
+  function touchHostLock() {
+    try { localStorage.setItem(HOST_LOCK_KEY, String(Date.now())); } catch { /* ignore */ }
+    if (ONLINE.room) saveHost(ONLINE.room); // keeps an idle lobby from looking expired
+  }
+
+  function newHostRoom(opts) {
+    return new Room.HostRoom({ ...opts, onView: showHostView, onChange: saveHost });
+  }
+
+  async function createRoom(name) {
+    if (!(await loadPeerLib())) throw new Error(LIB_FAIL);
+    if (hostElsewhere()) throw new Error('You are already hosting a room in another tab. Close it first.');
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        await openHost(newHostRoom({ code: Room.randomCode(), hostName: name }));
+        return;
+      } catch (err) {
+        if (!err.taken) throw err; // someone else already uses this code: try another
+      }
+    }
+    throw new Error("Couldn't find a free room code. Please try again.");
+  }
+
+  async function reopenRoom() {
+    const snap = savedHost();
+    if (!snap) throw new Error('That room has expired.');
+    if (!(await loadPeerLib())) throw new Error(LIB_FAIL);
+    if (hostElsewhere()) throw new Error('That room is open in another tab.');
+    for (let attempt = 0; attempt < 20; attempt++) {
+      try {
+        await openHost(Room.HostRoom.restore(snap, { onView: showHostView, onChange: saveHost }));
+        return;
+      } catch (err) {
+        if (!err.taken) throw err;
+        await pause(1500); // our old connection may still be registered: give it a moment to drop
+      }
+    }
+    throw new Error("Couldn't reopen the room. Try again in a moment.");
+  }
+
+  // Registers the room under its code. Resolves once guests can find it.
+  function openHost(room) {
+    return new Promise((resolve, reject) => {
+      let opened = false;
+      const peer = new Peer(PEER_PREFIX + room.code, peerOpts());
+      const fail = err => {
+        room.close();
+        try { peer.destroy(); } catch { /* already gone */ }
+        reject(err);
+      };
+      const timer = setTimeout(() => {
+        if (!opened) fail(new Error("Couldn't reach the matchmaking service. Check your internet connection."));
+      }, 15000);
+      peer.on('open', () => {
+        opened = true;
+        clearTimeout(timer);
+        setBanner('');
+        APP.mode = 'online';
+        ONLINE.room = room;
+        ONLINE.peer = peer;
+        ONLINE.beat = setInterval(() => room.heartbeat(), HEARTBEAT_MS);
+        touchHostLock();
+        ONLINE.lock = setInterval(touchHostLock, 2000);
+        room.refresh(); // shows the lobby, and saves the room
+        resolve();
+      });
+      peer.on('connection', conn => {
+        conn.on('data', msg => room.handleMessage(conn, msg));
+        conn.on('close', () => room.disconnected(conn));
+      });
+      peer.on('error', e => {
+        if (!opened) {
+          clearTimeout(timer);
+          const taken = e.type === 'unavailable-id';
+          return fail(Object.assign(new Error(taken ? 'taken' : "Couldn't open the room. Check your internet connection."), { taken }));
+        }
+        if (e.type !== 'unavailable-id') toast('Connection problem. Guests may need to rejoin.');
+      });
+      // If the link to the matchmaking service drops, get it back. Players already in the room stay connected.
+      peer.on('disconnected', () => {
+        if (peer.destroyed) return;
+        setBanner('Lost contact with the matchmaking service. Reconnecting…');
+        setTimeout(() => { try { peer.reconnect(); } catch { /* try again next time */ } }, 2000);
+      });
+    });
+  }
+
+  function closeHost(message = '') {
+    const room = ONLINE.room;
+    const peer = ONLINE.peer;
+    clearInterval(ONLINE.beat);
+    clearInterval(ONLINE.lock);
+    ONLINE.room = null;
+    ONLINE.peer = null;
+    ONLINE.beat = null;
+    ONLINE.lock = null;
+    ONLINE.view = null;
+    if (room) room.close('The host closed the room.');
+    clearHost();
+    try { localStorage.removeItem(HOST_LOCK_KEY); } catch { /* ignore */ }
+    // Give the "room closed" messages a moment to leave before the connection is dropped.
+    setTimeout(() => { try { peer && peer.destroy(); } catch { /* already gone */ } }, 400);
+    setBanner('');
+    showMenu(message);
+  }
+
+  function onlineDispatch(action) {
+    if (ONLINE.room) {
+      const result = ONLINE.room.act(0, action);
+      if (!result.ok) toast(result.error);
+      return;
+    }
+    if (ONLINE.link && ONLINE.link.conn.open) ONLINE.link.conn.send({ t: 'action', action });
+    else toast("You're not connected. Trying to reconnect…");
+  }
+
+  // ---------- online: the guest's side ----------
+  // Connects to a room's host and sends the first message (join, or resume with a token). Resolves once the host
+  // has given us a seat. Rejects with a message: err.retry = worth trying again, err.gone = the seat is no longer ours.
+  function openGuest(code, hello) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const peer = new Peer(undefined, peerOpts());
+      const fail = (message, opts = {}) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        ONLINE.cancelPending = null;
+        try { peer.destroy(); } catch { /* already gone */ }
+        reject(Object.assign(new Error(message), opts));
+      };
+      const timer = setTimeout(() => fail("The host didn't answer. They may have closed the page.", { retry: true }), JOIN_TIMEOUT_MS);
+      ONLINE.cancelPending = () => fail('You cancelled.');
+      peer.on('error', e => fail(e.type === 'peer-unavailable'
+        ? 'No room has that code, or the host has closed it.'
+        : "Couldn't reach the matchmaking service. Check your internet connection.", { retry: true }));
+      peer.on('open', () => {
+        const conn = peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' });
+        conn.on('open', () => conn.send(hello));
+        conn.on('data', msg => {
+          conn._seen = Date.now();
+          if (!settled) {
+            if (msg.t === 'joined') {
+              settled = true;
+              clearTimeout(timer);
+              ONLINE.cancelPending = null;
+              ONLINE.seat = { code, token: msg.token };
+              ONLINE.link = { peer, conn, beat: guestBeat(conn) };
+              APP.mode = 'online';
+              saveSeat(code, msg.token);
+              return resolve();
+            }
+            if (msg.t === 'error') return fail(msg.error);
+            if (msg.t === 'gone') return fail(msg.reason, { gone: true });
+            return;
+          }
+          onGuestMessage(conn, msg);
+        });
+        conn.on('close', () => { if (!settled) fail('The host closed the connection.', { retry: true }); else onGuestDropped(conn); });
+      });
+    });
+  }
+
+  async function connectAsGuest(code, hello) {
+    if (!(await loadPeerLib())) throw new Error(LIB_FAIL);
+    return openGuest(code, hello);
+  }
+
+  // Runs `run` again when it fails in a way that might clear up by itself (see openGuest).
+  async function withRetries(run, status) {
+    ONLINE.cancelled = false;
+    for (let n = 1; ; n++) {
+      if (ONLINE.cancelled) throw new Error('You cancelled.');
+      status(n);
+      try {
+        return await run();
+      } catch (err) {
+        if (ONLINE.cancelled) throw new Error('You cancelled.');
+        if (!err.retry || n >= JOIN_ATTEMPTS) throw err;
+        await pause(1500);
+      }
+    }
+  }
+
+  function joinRoom(code, name) {
+    return withRetries(
+      () => connectAsGuest(code, { t: 'join', name }),
+      n => setOnlineMsg(n === 1 ? 'Joining…' : `Still trying (${n} of ${JOIN_ATTEMPTS})…`),
+    );
+  }
+
+  // Pings the host every few seconds. If the host stays silent for too long, the connection counts as dropped
+  // (a closed browser tab does not always say so).
+  function guestBeat(conn) {
+    conn._seen = Date.now();
+    return setInterval(() => {
+      if (!ONLINE.link || ONLINE.link.conn !== conn) return;
+      if (Date.now() - conn._seen > Room.HEARTBEAT_TIMEOUT_MS) return onGuestDropped(conn);
+      if (conn.open) conn.send({ t: 'ping', at: Date.now() });
+    }, HEARTBEAT_MS);
+  }
+
+  function onGuestMessage(conn, msg) {
+    if (!ONLINE.link || ONLINE.link.conn !== conn) return;
+    if (msg.t === 'state') {
+      ONLINE.view = msg.view;
+      $('menuNotice').textContent = '';
+      renderOnline();
+    } else if (msg.t === 'error') {
+      toast(msg.error);
+    } else if (msg.t === 'gone') {
+      leaveGuest(msg.reason, !msg.keep);
+    } else if (msg.t === 'ping') {
+      conn.send({ t: 'pong', at: msg.at }); // so the host can measure our connection
+    }
+  }
+
+  // The connection dropped without the host saying goodbye: try to get our seat back for a while.
+  function onGuestDropped(conn) {
+    if (!ONLINE.link || ONLINE.link.conn !== conn || !ONLINE.seat) return;
+    const old = ONLINE.link;
+    ONLINE.link = null;
+    clearInterval(old.beat);
+    try { old.peer.destroy(); } catch { /* already gone */ }
+    setBanner('Connection lost. Trying to get your seat back…');
+    reconnectSeat(1);
+  }
+
+  async function reconnectSeat(attempt) {
+    const seat = ONLINE.seat;
+    if (!seat || ONLINE.link) return;
+    try {
+      await connectAsGuest(seat.code, { t: 'resume', token: seat.token });
+      setBanner('');
+      toast('Reconnected.');
+    } catch (err) {
+      if (!ONLINE.seat) return; // we left in the meantime
+      if (err.gone) return leaveGuest(err.message, true);
+      if (attempt >= RECONNECT_ATTEMPTS) return leaveGuest('Lost the connection to the host.', false);
+      setBanner(`Connection lost. Trying again (${attempt} of ${RECONNECT_ATTEMPTS})…`);
+      setTimeout(() => reconnectSeat(attempt + 1), 3000);
+    }
+  }
+
+  // Leaves the room from this browser. `forget` drops our seat for good, so it can't be rejoined afterwards.
+  function leaveGuest(message = '', forget = true) {
+    const link = ONLINE.link;
+    ONLINE.link = null;
+    ONLINE.seat = null;
+    ONLINE.view = null;
+    if (forget) forgetSeat();
+    if (link) {
+      clearInterval(link.beat);
+      try { link.peer.destroy(); } catch { /* already gone */ }
+    }
+    setBanner('');
+    showMenu(message);
+  }
+
+  async function leaveOnlineClick() {
+    if (ONLINE.room) {
+      const message = ONLINE.room.game ? 'Close the room? Everyone will be disconnected.' : 'Close the room?';
+      if (confirm(message)) closeHost();
+      return;
+    }
+    const lobby = !ONLINE.view || ONLINE.view.phase === 'lobby';
+    if (lobby) {
+      // Tell the host we're leaving before the connection closes, so our seat is freed.
+      if (ONLINE.link && ONLINE.link.conn.open) { ONLINE.link.conn.send({ t: 'leave' }); await pause(300); }
+      return leaveGuest('', true);
+    }
+    if (!confirm('Leave the game? Your seat is kept, so you can rejoin. Until then the computer covers your turns.')) return;
+    leaveGuest('You left the game. Use "Rejoin room" to come back.', false);
+  }
+
+  function renderOnline() {
+    const v = ONLINE.view;
+    if (!v) return;
+    if (v.phase === 'lobby') {
+      if (modalKey !== 'rules') closeModal();
+      renderLobby(v);
+      showScreen('lobby');
+      return;
+    }
+    showScreen('game');
+    renderGame(v, { hidden: false, online: true });
+    syncModals(v, null);
+  }
+
+  function inviteLink(code) {
+    const base = location.href.split(/[?#]/)[0];
+    return `${base}?room=${code}`;
+  }
+
+  function renderLobby(v) {
+    $('roomCode').textContent = v.code;
+    // Opened from a file, the address is on this computer only, so friends are sent the code instead.
+    const fromFile = location.protocol === 'file:';
+    $('inviteLink').textContent = fromFile ? `Room code ${v.code}` : inviteLink(v.code);
+    $('copyBtn').textContent = fromFile ? 'Copy code' : 'Copy invite link';
+    $('copyBtn').dataset.copy = fromFile ? v.code : inviteLink(v.code);
+    $('inviteHelp').textContent = fromFile
+      ? 'Friends need their own copy of this game: send them the files index.html, core.js and room.js. They open it, choose Play online with friends, and type this code.'
+      : 'Send friends this link. They can also open the game, choose Play online with friends, and type the code.';
+    $('lobbySeats').replaceChildren(...v.seats.map((seat, i) => h('div', { class: 'lobby-seat' },
+      h('span', { class: 'dot' + (seat.connected ? ' on' : '') }),
+      h('span', { class: 'name' }, seat.name),
+      h('span', { class: 'tag' }, i === 0 ? 'Host' : seat.type === 'cpu' ? 'CPU' : 'Player'),
+      i === v.viewer ? h('span', { class: 'tag you' }, 'You') : null,
+      seat.type === 'human' && seat.connected && seat.ping != null
+        ? h('span', { class: 'ping ' + pingClass(seat.ping) }, `${seat.ping} ms`) : null,
+      v.host && i > 0 ? h('button', { class: 'btn small', onclick: () => onlineDispatch({ type: 'removeSeat', seat: i }) }, 'Remove') : null)));
+    $('lockNote').textContent = v.locked ? 'The room is locked: nobody new can join.' : '';
+    $('hostControls').classList.toggle('hidden', !v.host);
+    $('guestNote').classList.toggle('hidden', v.host);
+    $('lobbyTarget').value = String(v.target);
+    $('addCpuBtn').disabled = v.seats.length >= 4;
+    $('lockBtn').textContent = v.locked ? 'Unlock room' : 'Lock room';
+    $('startOnlineBtn').disabled = v.seats.length < 2;
+    $('startHint').textContent = v.seats.length < 2 ? 'Add a computer player, or wait for a friend to join.' : '';
+  }
+
+  // ---------- saved names and seats ----------
+  function savedName() {
+    try { return localStorage.getItem(NAME_KEY) || ''; } catch { return ''; }
+  }
+  function rememberName(name) {
+    try { localStorage.setItem(NAME_KEY, name); } catch { /* ignore */ }
+  }
+  // Remembered per browser, so closing the page and coming back can rejoin the same seat.
+  function saveSeat(code, token) {
+    try { localStorage.setItem(SEAT_KEY, JSON.stringify({ code, token })); } catch { /* ignore */ }
+  }
+  function savedSeat() {
+    try {
+      const s = JSON.parse(localStorage.getItem(SEAT_KEY));
+      return s && s.code && s.token ? s : null;
+    } catch {
+      return null;
+    }
+  }
+  function forgetSeat() {
+    try { localStorage.removeItem(SEAT_KEY); } catch { /* ignore */ }
+  }
+
+  function setOnlineMsg(text) {
+    $('onlineMsg').textContent = text;
+  }
+
+  function setJoining(on) {
+    $('cancelJoinBtn').classList.toggle('hidden', !on);
+    $('joinBtn').disabled = on;
+    $('createBtn').disabled = on;
+  }
+
+  // ---------- wiring ----------
+  $('modeLocal').onclick = () => showLocalSetup();
+  $('modeOnline').onclick = () => showOnlineScreen();
+  $('onlineBack').onclick = () => showMenu();
+  $('setupBack').onclick = () => showMenu();
+
+  $('reopenBtn').onclick = async () => {
+    $('menuNotice').textContent = 'Reopening your room…';
+    try {
+      await reopenRoom();
+      $('menuNotice').textContent = '';
+    } catch (err) {
+      showMenu(err.message);
+    }
+  };
+
+  $('rejoinBtn').onclick = async () => {
+    const seat = savedSeat();
+    if (!seat) return showMenu();
+    try {
+      await withRetries(
+        () => connectAsGuest(seat.code, { t: 'resume', token: seat.token }),
+        n => { $('menuNotice').textContent = n === 1 ? 'Rejoining…' : `Still trying (${n} of ${JOIN_ATTEMPTS})…`; },
+      );
+    } catch (err) {
+      if (err.gone) forgetSeat();
+      showMenu(err.message);
+    }
+  };
+
+  $('createBtn').onclick = async () => {
+    const name = $('onlineName').value.trim();
+    rememberName(name);
+    setOnlineMsg('Creating your room…');
+    setJoining(true);
+    try {
+      await createRoom(name);
+      setOnlineMsg('');
+    } catch (err) {
+      setOnlineMsg(err.message);
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  $('joinBtn').onclick = async () => {
+    const code = $('joinCode').value.trim().toUpperCase();
+    const name = $('onlineName').value.trim();
+    if (!/^[A-Z0-9]{4}$/.test(code)) return setOnlineMsg('Room codes have 4 letters or numbers.');
+    rememberName(name);
+    setJoining(true);
+    try {
+      await joinRoom(code, name);
+      setOnlineMsg('');
+    } catch (err) {
+      setOnlineMsg(err.message);
+    } finally {
+      setJoining(false);
+    }
+  };
+  $('cancelJoinBtn').onclick = () => { ONLINE.cancelled = true; if (ONLINE.cancelPending) ONLINE.cancelPending(); };
+  $('joinCode').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
+
+  $('copyBtn').onclick = async () => {
+    const text = $('copyBtn').dataset.copy || '';
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(text.startsWith('http') ? 'Invite link copied' : 'Room code copied');
+    } catch {
+      toast('Copy failed: write the code down instead');
+    }
+  };
+
+  $('addCpuBtn').onclick = () => onlineDispatch({ type: 'addCpu' });
+  $('lockBtn').onclick = () => onlineDispatch({ type: 'lock', locked: !(ONLINE.view && ONLINE.view.locked) });
+  $('startOnlineBtn').onclick = () => onlineDispatch({ type: 'start' });
+  $('lobbyTarget').onchange = e => onlineDispatch({ type: 'setTarget', target: Number(e.target.value) });
+
+  $('count').onchange = () => { readSetupFromDom(); renderSetupRows(); };
+  $('startBtn').onclick = startLocalMatch;
+
+  $('rulesBtn').onclick = openRules;
+  $('menuBtn').onclick = () => {
+    if (APP.mode === 'online') return leaveOnlineClick();
+    if (confirm('Leave this match and start a new setup?')) showLocalSetup();
+  };
+  $('drawBtn').onclick = () => dispatch({ type: 'draw' });
+  $('passBtn').onclick = () => dispatch({ type: 'pass' });
+  $('stock').onclick = () => { if (!$('drawBtn').disabled) dispatch({ type: 'draw' }); };
+  $('replaceBtn').onclick = () => onlineDispatch({ type: 'replace', seat: ONLINE.view.current });
+
+  // Closing the page while hosting: warn first. The room itself is kept, so a reload can reopen it.
+  window.addEventListener('beforeunload', e => {
+    if (!ONLINE.room) return;
+    try { localStorage.removeItem(HOST_LOCK_KEY); } catch { /* ignore */ }
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
+  // ---------- start ----------
+  loadPeerLib(); // start fetching the online library while the menu is up
+  showMenu();
+  const invited = new URLSearchParams(location.search).get('room');
+  if (invited && /^[A-Za-z0-9]{4}$/.test(invited)) showOnlineScreen(invited.toUpperCase());
+})();
+</script>
+</body>
+</html>

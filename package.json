@@ -1,0 +1,12 @@
+﻿{
+  "name": "crazy-eights",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Crazy Eights card game: play on one device, or online with friends over PeerJS (no game server).",
+  "scripts": {
+    "test": "node --test test/core.test.js test/room.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
