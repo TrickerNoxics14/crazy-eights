@@ -18,6 +18,8 @@ Things to know:
 - Joining retries automatically if the connection is slow, and you can press **Cancel** while it tries.
 - Players connect straight to each other's browsers (WebRTC). The matchmaking that introduces them uses PeerJS's free public service, the same one as the other games. Strict networks (some VPNs and school Wi-Fi) can block the connection.
 
+**▶ Play in the browser: https://trickernoxics14.github.io/crazy-eights/**
+
 ## Playing from the HTML file
 
 You don't need a website to play online. Double-click `index.html` to open it in Chrome or Edge, then use **Play online with friends** as above.
