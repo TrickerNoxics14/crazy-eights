@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Core = require('../core.js');
-const { HostRoom, HEARTBEAT_TIMEOUT_MS } = require('../room.js');
+const { HostRoom, PublicBoard, HEARTBEAT_TIMEOUT_MS } = require('../room.js');
 
 // A stand-in for a PeerJS connection. Messages are copied, as they would be over a real network.
 function fakeConn() {
@@ -75,16 +75,19 @@ test('a stranger with no seat cannot act or read the room', () => {
   assert.equal(stranger.inbox.at(-1).t, 'gone');
 });
 
-test('a full room and a started game refuse new guests with a reason', () => {
+test('a full room refuses new players, and a late guest joins as a watcher once the game has started', () => {
   const { room } = lobbyWith('Ben', 'Cy', 'Dee');
   const late = fakeConn();
   room.handleMessage(late, { t: 'join', name: 'Eve' });
-  assert.deepEqual(errorsOf(late), ['That room is full.']);
+  assert.deepEqual(errorsOf(late), ['That room is full. You can watch instead.']);
 
   room.act(0, { type: 'start' });
   const later = fakeConn();
   room.handleMessage(later, { t: 'join', name: 'Fay' });
-  assert.deepEqual(errorsOf(later), ['That game has already started.']);
+  assert.equal(later.inbox[0].t, 'joined');
+  assert.equal(later.inbox[0].spectator, true);
+  assert.equal(room.viewFor(0).spectators, 1);
+  room.close();
 });
 
 test('the lobby rules: at least two seats to start, guests can leave, the host closes instead', () => {
@@ -274,6 +277,101 @@ test('a room can be saved and rebuilt in the middle of a game, and guests can re
   assert.equal(rebuilt.viewFor(0).seats[1].connected, true);
   room.close();
   rebuilt.close();
+});
+
+test('a player who joins a game in progress takes over a computer seat, and a later one watches', () => {
+  const { room, guests: [ben] } = lobbyWith('Ben');
+  room.act(0, { type: 'addCpu' });
+  room.act(0, { type: 'start' });
+  const dee = fakeConn();
+  room.handleMessage(dee, { t: 'join', name: 'Dee' });
+  assert.equal(dee.inbox[0].t, 'joined');
+  assert.equal(dee.inbox[0].spectator, false);
+  assert.equal(dee.inbox[0].seat, 2);
+  assert.equal(room.seats[2].type, 'human');
+  assert.equal(room.seats[2].name, 'Dee');
+  assert.equal(room.game.seats[2].type, 'human', 'the game sees the new player too');
+  const v = latestState(dee);
+  assert.equal(v.viewer, 2);
+  assert.equal(Array.isArray(v.seats[2].hand), true, 'Dee sees their own cards');
+  assert.equal(latestState(ben).seats[2].type, 'human');
+
+  const eve = fakeConn();
+  room.handleMessage(eve, { t: 'join', name: 'Eve' });
+  assert.equal(eve.inbox[0].spectator, true, 'no computer seat is free, so Eve watches');
+  room.close();
+});
+
+test('a watcher sees the game without any cards, can chat, and cannot play', () => {
+  const { room, guests: [ben] } = lobbyWith('Ben');
+  room.act(0, { type: 'start' });
+  const watcher = fakeConn();
+  room.handleMessage(watcher, { t: 'join', name: 'Wes', spectate: true });
+  const view = latestState(watcher);
+  assert.equal(view.spectator, true);
+  assert.equal(view.viewer, -1);
+  assert.equal(view.seats[0].hand, undefined);
+  assert.equal(view.seats[1].hand, undefined);
+
+  room.handleMessage(watcher, { t: 'action', action: { type: 'draw' } });
+  assert.match(errorsOf(watcher)[0], /Watchers can chat/);
+  room.handleMessage(watcher, { t: 'chat', text: 'Good luck!' });
+  assert.equal(room.chat.at(-1).text, 'Good luck!');
+  assert.equal(latestState(ben).chat.at(-1).from, 'Wes', 'players see what watchers say');
+  room.close();
+});
+
+test('chat is shared with the room, cleaned up, and rate-limited', () => {
+  const { room, guests: [ben, cy] } = lobbyWith('Ben', 'Cy');
+  room.handleMessage(ben, { t: 'chat', text: '   hello\n\nthere  ' });
+  assert.equal(room.chat[0].text, 'hello there');
+  room.handleMessage(ben, { t: 'chat', text: 'too fast' });
+  assert.match(errorsOf(ben)[0], /Slow down/);
+  room.handleMessage(cy, { t: 'chat', text: '   ' });
+  assert.match(errorsOf(cy)[0], /Type a message/);
+  assert.equal(room.chatFrom(room.seats[0], 'Hi all').ok, true, 'the host can chat too');
+  assert.deepEqual(latestState(cy).chat.map(m => m.text), ['hello there', 'Hi all']);
+  room.close();
+});
+
+test('team games: the teams are shown to everyone, and the host can switch them on for four seats', () => {
+  const { room, guests: [ben] } = lobbyWith('Ben');
+  assert.equal(room.act(0, { type: 'setTeams', teams: true }).ok, false, 'teams need four seats');
+  room.act(0, { type: 'addCpu' });
+  room.act(0, { type: 'addCpu' });
+  assert.equal(room.act(0, { type: 'setTeams', teams: true }).ok, true);
+  room.act(0, { type: 'start' });
+  const v = latestState(ben);
+  assert.equal(v.teams, true);
+  assert.deepEqual(v.teamScores, [0, 0]);
+  assert.deepEqual(v.seats.map(s => s.team), [0, 1, 0, 1]);
+  room.close();
+});
+
+test('the host can set how smart the computer players are, and teams switch off when seats change', () => {
+  const { room } = lobbyWith('Ben');
+  room.act(0, { type: 'addCpu' });
+  room.act(0, { type: 'addCpu' });
+  room.act(0, { type: 'setTeams', teams: true });
+  assert.equal(room.act(0, { type: 'setCpuLevel', level: 'hard' }).ok, true);
+  assert.equal(room.seats[2].level, 'hard');
+  assert.equal(room.act(0, { type: 'setCpuLevel', level: 'extreme' }).ok, false);
+  assert.equal(room.act(0, { type: 'removeSeat', seat: 3 }).ok, true);
+  assert.equal(room.teams, false, 'teams need four seats, so they turn off');
+  room.close();
+});
+
+test('the public board lists rooms that are announcing, forgets rooms that go quiet, and ignores bad codes', () => {
+  let now = 1000;
+  const board = new PublicBoard({ ttlMs: 10000, now: () => now });
+  const room = new HostRoom({ code: 'PUB1', hostName: 'Ann' });
+  assert.equal(board.announce(room.publicInfo()), true);
+  assert.equal(board.announce({ code: 'bad code' }), false);
+  assert.equal(board.list().length, 1);
+  assert.equal(board.list()[0].name, 'Ann');
+  now += 11000;
+  assert.equal(board.list().length, 0, 'a room that stops announcing drops off the list');
+  room.close();
 });
 
 test('a host and two guests finish a match through the room, with the computer playing its turns', async () => {

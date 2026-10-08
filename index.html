@@ -81,6 +81,7 @@ button { cursor: pointer; }
 }
 .btn.primary:hover:not(:disabled) { background: linear-gradient(180deg, #ffe39a, #ffd45e); }
 .btn.small { padding: 5px 11px; font-size: .85rem; border-radius: 9px; }
+.btn.sound { min-width: 44px; padding: 9px 10px; }
 
 /* ---------- menus and forms ---------- */
 .panel {
@@ -132,18 +133,24 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   display: flex; align-items: center; gap: 10px; padding: 10px 12px;
   border-radius: 14px; background: rgba(0, 0, 0, .28); border: 1px solid var(--line);
 }
-.lobby-seat .name { flex: 1; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+.lobby-seat .name { flex: 1; font-weight: 650; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: #6f7f74; box-shadow: 0 0 0 3px rgba(255, 255, 255, .06); }
 .dot.on { background: #5fd47c; box-shadow: 0 0 0 3px rgba(95, 212, 124, .18), 0 0 10px rgba(95, 212, 124, .6); }
 .hint { color: var(--muted); font-size: .88rem; margin: 10px 0 0; text-align: center; }
 .actions { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .setup .actions { justify-content: flex-end; margin-top: 14px; }
 .setup .actions.start { justify-content: space-between; }
+.browse-list { margin: 14px 0; }
+.browse-room {
+  display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap;
+  padding: 12px; border-radius: 14px; background: rgba(0, 0, 0, .28); border: 1px solid var(--line); margin-bottom: 8px;
+}
+.browse-info .name { font-weight: 700; }
 
 /* ---------- game table ---------- */
 .game {
   position: relative; z-index: 1; max-width: 1000px; margin: 0 auto;
-  padding: 16px 18px 26px; display: flex; flex-direction: column; gap: 16px;
+  padding: 16px 18px 10px; display: flex; flex-direction: column; gap: 16px;
 }
 .seats { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .seat {
@@ -175,6 +182,8 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
 .tag.you { background: var(--gold); color: #2b1d00; }
 .tag.off { background: #7a2a2a; color: #ffd9d4; }
 .tag.warn { background: #7a5a1a; color: #ffe7a3; }
+.tag.team0 { background: #2e7dd6; color: #fff; }
+.tag.team1 { background: #c4572a; color: #fff; }
 .ping { font-weight: 750; }
 .ping.good { color: #7be89a; }
 .ping.ok { color: var(--gold); }
@@ -247,6 +256,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
 .card.empty { background: rgba(0, 0, 0, .12); box-shadow: none; border: 2px dashed rgba(255, 255, 255, .3); }
 .card.clickable { cursor: pointer; }
 .card.clickable:hover { transform: translateY(-4px); box-shadow: 0 12px 22px rgba(0, 0, 0, .4); }
+.card.flip { animation: flipIn .45s ease backwards; }
 
 .hand .card { transition: transform .18s ease, box-shadow .18s ease; }
 .hand .card + .card { margin-left: calc(var(--card-w) * -0.36); }
@@ -257,6 +267,27 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   box-shadow: 0 0 0 3px var(--gold), 0 0 16px rgba(242, 193, 78, .5), 0 8px 16px rgba(0, 0, 0, .4);
 }
 .hand .card.playable:hover { transform: translateY(-14px); }
+.hand .card.deal { animation: dealIn .3s ease backwards; }
+
+/* ---------- chat ---------- */
+.chat {
+  position: relative; z-index: 1; width: min(640px, calc(100% - 32px)); margin: 0 auto 22px;
+  padding: 12px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.chat-log {
+  height: 112px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+  padding: 4px 6px; font-size: .9rem;
+}
+.chat-log .msg b { color: var(--gold); font-weight: 750; margin-right: 6px; }
+.chat-log .empty { color: var(--muted); font-style: italic; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.quick button {
+  padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .08); color: var(--ink); font-size: .88rem;
+}
+.quick button:hover { background: rgba(255, 255, 255, .18); }
+.chat-form { display: flex; gap: 8px; }
+.chat-form input { flex: 1; min-width: 0; }
 
 /* ---------- modal and toast ---------- */
 .modal-backdrop {
@@ -302,6 +333,12 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   0%, 100% { box-shadow: 0 0 0 2px rgba(242, 193, 78, .45), 0 10px 26px rgba(242, 193, 78, .18); }
   50% { box-shadow: 0 0 0 4px rgba(242, 193, 78, .25), 0 10px 30px rgba(242, 193, 78, .3); }
 }
+@keyframes flipIn {
+  0% { transform: rotateY(90deg) scale(.92); opacity: .2; }
+  60% { transform: rotateY(-8deg); }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes dealIn { from { transform: translateY(26px) scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -317,6 +354,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   .suit-badge { font-size: .95rem; }
   .seat { min-width: 140px; }
   .log { height: 96px; }
+  .chat-log { height: 96px; }
 }
 </style>
 </head>
@@ -326,6 +364,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   <div class="brand">Crazy <span>Eights</span></div>
   <div class="meta" id="meta"></div>
   <div class="top-actions">
+    <button class="btn sound" id="soundBtn" title="Sound on or off" aria-pressed="true">🔊</button>
     <button class="btn" id="rulesBtn">Rules</button>
     <button class="btn hidden" id="menuBtn">New game</button>
   </div>
@@ -344,6 +383,10 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     <button class="mode-btn" id="modeOnline">
       <strong>Play online with friends</strong>
       <span>Create a room and send friends the link. Everyone plays from their own device. Nothing to install.</span>
+    </button>
+    <button class="mode-btn" id="modeBrowse">
+      <strong>Browse public games</strong>
+      <span>See rooms that have been made public, join one, or watch a game in progress.</span>
     </button>
   </div>
   <div class="actions">
@@ -372,6 +415,21 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
       </select>
     </label>
   </div>
+  <div class="row">
+    <label>Computer level
+      <select id="cpuLevelLocal">
+        <option value="easy">Easy</option>
+        <option value="normal">Normal</option>
+        <option value="hard">Hard (looks ahead)</option>
+      </select>
+    </label>
+    <label>Teams
+      <select id="teamsLocal">
+        <option value="solo">Everyone for themselves</option>
+        <option value="teams">Two teams (needs 4 players)</option>
+      </select>
+    </label>
+  </div>
   <div class="seat-rows" id="seatRows"></div>
   <p class="muted small">Several humans can share this device: the game asks each person to take over before their turn.</p>
   <p class="error" id="setupMsg"></p>
@@ -395,10 +453,26 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   </label>
   <div class="actions">
     <button class="btn hidden" id="cancelJoinBtn">Cancel</button>
+    <button class="btn" id="watchBtn">Watch instead</button>
     <button class="btn" id="joinBtn">Join room</button>
   </div>
   <p class="error" id="onlineMsg"></p>
   <div class="actions"><button class="btn" id="onlineBack">Back</button></div>
+</section>
+
+<!-- Public games -->
+<section class="panel setup hidden" id="browse">
+  <h2>Public games</h2>
+  <p class="muted">Rooms their hosts have made public. Join one, or watch a game in progress.</p>
+  <label>Your name
+    <input type="text" id="browseName" maxlength="16" placeholder="Your name">
+  </label>
+  <div class="browse-list" id="browseList"></div>
+  <p class="error" id="browseMsg"></p>
+  <div class="actions">
+    <button class="btn" id="browseBack">Back</button>
+    <button class="btn" id="browseRefresh">Refresh</button>
+  </div>
 </section>
 
 <!-- Online: waiting room -->
@@ -420,10 +494,19 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
           <option value="200">200 points</option>
         </select>
       </label>
+      <label>Computer level
+        <select id="cpuLevel">
+          <option value="easy">Easy</option>
+          <option value="normal">Normal</option>
+          <option value="hard">Hard (looks ahead)</option>
+        </select>
+      </label>
     </div>
     <div class="actions">
       <button class="btn" id="addCpuBtn">Add computer player</button>
+      <button class="btn" id="teamsBtn">Play as teams</button>
       <button class="btn" id="lockBtn">Lock room</button>
+      <button class="btn" id="publicBtn">Make public</button>
       <button class="btn primary" id="startOnlineBtn">Start game</button>
     </div>
     <p class="hint" id="startHint"></p>
@@ -455,6 +538,16 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   <div class="hand" id="hand"></div>
 </main>
 
+<!-- Chat (online only) -->
+<section class="chat hidden" id="chat" aria-label="Chat">
+  <div class="chat-log" id="chatLog" aria-live="polite"></div>
+  <div class="quick" id="quickChat"></div>
+  <form class="chat-form" id="chatForm" autocomplete="off">
+    <input id="chatInput" maxlength="120" placeholder="Say something…" aria-label="Chat message">
+    <button class="btn small primary" type="submit">Send</button>
+  </form>
+</section>
+
 <div class="toast hidden" id="toast" role="status"></div>
 
 <script src="core.js"></script>
@@ -470,17 +563,21 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
 
   const SETUP_KEY = 'crazy-eights-setup';
   const NAME_KEY = 'crazy-eights-name';
-  const SEAT_KEY = 'crazy-eights-seat';            // our seat in someone else's room
+  const SEAT_KEY = 'crazy-eights-seat';            // our seat (or watching spot) in someone else's room
   const HOST_KEY = 'crazy-eights-host';            // the room this browser hosts, kept so a reload can reopen it
   const HOST_LOCK_KEY = 'crazy-eights-host-alive'; // refreshed while a tab hosts, so a second tab does not also host
+  const MUTE_KEY = 'crazy-eights-muted';
   const HOST_TTL_MS = 30 * 60 * 1000;              // a saved room nobody reopens within 30 minutes is forgotten
   const HOST_LOCK_STALE_MS = 6000;
   const PEER_PREFIX = 'crazy8-v1-';
+  const LOBBY_ID = PEER_PREFIX + 'lobby';          // the public list (held by one browser at a time)
+  const ANNOUNCE_MS = 8000;
   const HEARTBEAT_MS = 3000;
   const JOIN_TIMEOUT_MS = 12000;
   const JOIN_ATTEMPTS = 3;
   const RECONNECT_ATTEMPTS = 60;
   const LIB_FAIL = "Couldn't load the online library. Check your internet connection, then refresh the page.";
+  const QUICK = ['👍', '😂', '😮', '👏', 'GG', 'Nice!', 'Oops', 'Hurry up!', 'Your move!'];
 
   // Same pinned PeerJS file and STUN servers as the other games. The hash makes the browser refuse a changed file.
   const PEER_HASH = 'sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR';
@@ -501,12 +598,15 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     "Can't play? Draw one card. If it works, you may play it; otherwise pass.",
     'Get rid of all your cards to go out and win the round.',
     'The winner scores every point left in the other hands: 8 = 50, A = 1, J/Q/K = 10, the rest = face value.',
+    "In team games the winning team scores the points in the other team's hands only.",
     'If nobody can play and the draw pile is empty, the round is blocked and the lowest hand wins it.',
-    'The first player to reach the target score wins the match.',
+    'The first player (or team) to reach the target score wins the match.',
   ];
   const DEFAULT_SETUP = {
     count: 4,
     target: 100,
+    cpuLevel: 'normal',
+    teams: false,
     seats: [
       { name: 'Player 1', type: 'human' },
       { name: 'CPU 1', type: 'cpu' },
@@ -531,17 +631,137 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     return node;
   }
 
-  const APP = { mode: null };                       // 'local' | 'online' | null (menu)
+  const avatarEl = (name, i) => h('span', { class: `avatar c${i % 4}`, 'aria-hidden': 'true' },
+    (name || '?').trim().charAt(0).toUpperCase() || '?');
+  const pingClass = ms => (ms < 120 ? 'good' : ms < 250 ? 'ok' : 'bad');
+
+  const APP = { mode: null, watching: false };      // mode: 'local' | 'online' | null (menu)
   const LOCAL = { game: null, viewer: 0, hideHand: false, lastTurn: -1, timer: null, setup: loadLocalSetup() };
   // ONLINE.room / ONLINE.peer / ONLINE.beat / ONLINE.lock: the room this browser hosts (we are seat 0).
-  // ONLINE.seat / ONLINE.link: our seat as a guest (the code and token, and the live connection).
+  // ONLINE.seat / ONLINE.link: our seat (or watching spot) as a guest, with the live connection.
   const ONLINE = {
     room: null, peer: null, beat: null, lock: null,
     seat: null, link: null, view: null,
     cancelled: false, cancelPending: null,
   };
+  // The public list: this browser may hold the list (the "keeper") and/or send its room to whoever does.
+  const LISTING = { board: new Room.PublicBoard(), keeper: null, claiming: false, link: null, linkPending: false, timer: null };
+  const BROWSE = { timer: null, busy: false };
+  // What the sounds and small animations need to remember between screens.
+  const FB = { seenLog: null, wasMyTurn: false, ready: false, lastTopId: null, lastHandIds: null, chatCount: null };
   let modalKey = null;
   let toastTimer = null;
+
+  // ---------- sound (made in the browser, so there are no sound files to download) ----------
+  const SOUND = { ctx: null, muted: loadMuted() };
+
+  function loadMuted() {
+    try { return localStorage.getItem(MUTE_KEY) === '1'; } catch { return false; }
+  }
+
+  function audioContext() {
+    if (!SOUND.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      SOUND.ctx = new AC();
+    }
+    if (SOUND.ctx.state === 'suspended') SOUND.ctx.resume();
+    return SOUND.ctx;
+  }
+
+  function tone(freq, start, dur, type, gain) {
+    const ctx = audioContext();
+    if (!ctx) return;
+    const t = ctx.currentTime + start;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  // A short burst of filtered noise: the sound of a card slapping down, or sliding past.
+  function noise(dur, start, freq, gain) {
+    const ctx = audioContext();
+    if (!ctx) return;
+    const t = ctx.currentTime + start;
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = freq;
+    filter.Q.value = 1;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(filter).connect(g).connect(ctx.destination);
+    src.start(t);
+  }
+
+  const SOUNDS = {
+    play: () => noise(0.08, 0, 1800, 0.5),
+    draw: () => noise(0.22, 0, 900, 0.35),
+    pass: () => tone(260, 0, 0.09, 'sine', 0.08),
+    eight: () => { tone(523, 0, 0.18, 'triangle', 0.14); tone(784, 0.12, 0.25, 'triangle', 0.14); },
+    out: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, i * 0.09, 0.22, 'triangle', 0.13)),
+    blocked: () => tone(150, 0, 0.3, 'square', 0.06),
+    turn: () => tone(880, 0, 0.12, 'sine', 0.08),
+    chat: () => tone(660, 0, 0.07, 'sine', 0.05),
+  };
+
+  function sound(name) {
+    if (SOUND.muted || !SOUNDS[name]) return;
+    try { SOUNDS[name](); } catch { /* sound is a nice extra: never break the game over it */ }
+  }
+
+  function updateSoundButton() {
+    $('soundBtn').textContent = SOUND.muted ? '🔇' : '🔊';
+    $('soundBtn').setAttribute('aria-pressed', String(!SOUND.muted));
+  }
+
+  // The game log tells us what happened. The new lines (since last time) decide which sound to play.
+  function newLogLines(log) {
+    const prev = FB.seenLog;
+    FB.seenLog = log.slice();
+    if (!prev) return [];
+    if (prev.length === 0) return log.slice();
+    if (log.length >= prev.length && prev.every((line, i) => log[i] === line)) return log.slice(prev.length);
+    const idx = log.lastIndexOf(prev[prev.length - 1]);
+    return idx >= 0 ? log.slice(idx + 1) : [];
+  }
+
+  function soundForLine(line) {
+    if (/ went out and scored/.test(line)) sound('out');
+    else if (/had the lowest hand|round is blocked/.test(line)) sound('blocked');
+    else if (/ played .*calling/.test(line)) sound('eight');
+    else if (/ played /.test(line)) sound('play');
+    else if (/ drew a card/.test(line)) sound('draw');
+    else if (/ passed\./.test(line)) sound('pass');
+  }
+
+  function resetFeedback() {
+    FB.seenLog = null;
+    FB.wasMyTurn = false;
+    FB.ready = false;
+    FB.lastTopId = null;
+    FB.lastHandIds = null;
+    FB.chatCount = null;
+  }
+
+  // Called for every game view: plays the sounds for what just happened, and notes when it becomes our turn.
+  function feedback(v, myTurn) {
+    newLogLines(v.log).forEach(soundForLine);
+    if (myTurn && !FB.wasMyTurn && FB.ready) sound('turn');
+    FB.wasMyTurn = myTurn;
+    FB.ready = true;
+  }
 
   // ---------- the PeerJS library ----------
   const loadPeerLib = (() => {
@@ -565,7 +785,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   })();
 
   // ---------- screens ----------
-  const SCREENS = ['menu', 'setup', 'online', 'lobby', 'game'];
+  const SCREENS = ['menu', 'setup', 'online', 'browse', 'lobby', 'game'];
 
   function showScreen(name) {
     for (const s of SCREENS) $(s).classList.toggle('hidden', s !== name);
@@ -573,12 +793,16 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     $('menuBtn').classList.toggle('hidden', !inRoom);
     if (APP.mode === 'online') $('menuBtn').textContent = ONLINE.room ? 'Close room' : 'Leave room';
     else $('menuBtn').textContent = 'New game';
+    $('chat').classList.toggle('hidden', !(APP.mode === 'online' && inRoom));
     if (!inRoom) $('meta').textContent = '';
   }
 
   function showMenu(notice = '') {
     stopLocal();
+    stopBrowse();
     APP.mode = null;
+    APP.watching = false;
+    resetFeedback();
     const seat = savedSeat();
     $('rejoinBtn').classList.toggle('hidden', !seat);
     $('rejoinBtn').textContent = seat ? `Rejoin room ${seat.code}` : '';
@@ -597,6 +821,8 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     stopLocal();
     APP.mode = 'local';
     $('setupMsg').textContent = '';
+    $('cpuLevelLocal').value = LOCAL.setup.cpuLevel || 'normal';
+    $('teamsLocal').value = LOCAL.setup.teams ? 'teams' : 'solo';
     renderSetupRows();
     showScreen('setup');
   }
@@ -606,6 +832,21 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     $('joinCode').value = prefillCode;
     $('onlineMsg').textContent = '';
     showScreen('online');
+  }
+
+  function showBrowse() {
+    APP.mode = null;
+    $('browseName').value = savedName();
+    showScreen('browse');
+    loadPublicRooms();
+    // Keep the list fresh while it is on screen (rooms come and go).
+    clearInterval(BROWSE.timer);
+    BROWSE.timer = setInterval(() => { if (!$('browse').classList.contains('hidden')) loadPublicRooms(); }, 5000);
+  }
+
+  function stopBrowse() {
+    clearInterval(BROWSE.timer);
+    BROWSE.timer = null;
   }
 
   // ---------- modals, toast and banner ----------
@@ -691,11 +932,15 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     const key = `end:${v.round}:${v.phase}`;
     const { winner, gained, blocked } = v.result;
     const winnerName = v.seats[winner].name;
+    const winnerTeam = v.teams ? v.seats[winner].team : null;
     if (v.phase === 'matchOver') {
+      const champion = v.teams ? Core.teamName(winnerTeam) : winnerName;
       openModal({
         key,
-        title: `${winnerName} wins the match!`,
-        text: `Reached ${v.seats[winner].score} points.`,
+        title: `${champion} wins the match!`,
+        text: v.teams
+          ? `${Core.teamName(0)} ${v.teamScores[0]} – ${v.teamScores[1]} ${Core.teamName(1)}.`
+          : `Reached ${v.seats[winner].score} points.`,
         body: scoreTable(v),
         buttons: [
           { label: APP.mode === 'online' ? 'Back to lobby' : 'Back to setup', onClick: () => dispatch({ type: 'lobby' }) },
@@ -703,10 +948,12 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
         ],
       });
     } else {
+      const who = v.teams ? `${winnerName} (${Core.teamName(winnerTeam)})` : winnerName;
+      const from = v.teams ? "the other team's hands" : 'everyone else\'s hands';
       openModal({
         key,
         title: blocked ? 'Round blocked' : `${winnerName} went out!`,
-        text: `${winnerName} ${blocked ? 'had the lowest hand' : 'went out'} and scores ${gained} from the cards left in everyone else's hands.`,
+        text: `${who} ${blocked ? 'had the lowest hand' : 'went out'} and scores ${gained} from the cards left in ${from}.`,
         body: scoreTable(v),
         buttons: [{ label: 'Next round', primary: true, onClick: () => dispatch({ type: 'next' }) }],
       });
@@ -715,7 +962,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
 
   function scoreTable(v) {
     return h('table', { class: 'score-table' },
-      h('tr', {}, h('th', {}, 'Player'), h('th', {}, 'Cards left'), h('th', {}, 'Hand value'), h('th', {}, 'Total')),
+      h('tr', {}, h('th', {}, 'Player'), h('th', {}, 'Cards left'), h('th', {}, 'Hand value'), h('th', {}, v.teams ? 'Team total' : 'Total')),
       v.seats.map((seat, i) => h('tr', {},
         h('td', {}, seat.name, v.result && i === v.result.winner ? ' 🏆' : ''),
         h('td', {}, seat.handCount),
@@ -723,8 +970,9 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
         h('td', {}, seat.score))));
   }
 
+  // Watchers see the round result in the table and the log, not a pop-up they cannot act on.
   function syncModals(v, passSeat) {
-    if (v.phase === 'roundOver' || v.phase === 'matchOver') {
+    if ((v.phase === 'roundOver' || v.phase === 'matchOver') && v.viewer >= 0) {
       syncModal(`end:${v.round}:${v.phase}`, () => openEndModal(v));
     } else if (passSeat) {
       syncModal(`pass:${v.turn}`, () => openPassOverlay(passSeat.name, v.turn));
@@ -735,22 +983,19 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
 
   // ---------- shared rendering (local and online use the same view shape) ----------
   function renderGame(v, { hidden, online }) {
-    const seat = v.seats[v.viewer];
-    const hand = seat.hand || [];
-    const myTurn = !hidden && v.phase === 'playing' && v.viewer === v.current && seat.type === 'human';
+    const seat = v.seats[v.viewer] || null;
+    const hand = seat && seat.hand ? seat.hand : [];
+    const myTurn = !hidden && v.phase === 'playing' && !!seat && v.viewer === v.current && seat.type === 'human';
     const legal = new Set(myTurn ? hand.filter(c => Core.canPlayWith(c, v.top, v.activeSuit)).map(c => c.id) : []);
-    $('meta').textContent = `${online ? `Room ${v.code} · ` : ''}Round ${v.round} · first to ${v.target}`;
+    const score = v.teams ? ` · ${Core.teamName(0)} ${v.teamScores[0]} – ${v.teamScores[1]} ${Core.teamName(1)}` : '';
+    $('meta').textContent = `${online ? `Room ${v.code} · ` : ''}Round ${v.round} · first to ${v.target}${score}`;
     renderSeats(v, online);
     renderPiles(v);
     renderControls(v, { hidden, online, myTurn, legalCount: legal.size });
     renderLog(v);
-    renderHand(v, { hidden, legal, hand });
+    renderHand(v, { hidden, legal, hand, seat });
+    feedback(v, myTurn);
   }
-
-  const pingClass = ms => (ms < 120 ? 'good' : ms < 250 ? 'ok' : 'bad');
-  // The coloured initial shown on each seat (the colour follows the seat's position at the table).
-  const avatarEl = (name, i) => h('span', { class: `avatar c${i % 4}`, 'aria-hidden': 'true' },
-    (name || '?').trim().charAt(0).toUpperCase() || '?');
 
   function renderSeats(v, online) {
     $('seats').replaceChildren(...v.seats.map((seat, i) => {
@@ -761,6 +1006,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
       return h('div', { class: classes.join(' ').trim() },
         h('div', { class: 'name' }, avatarEl(seat.name, i), seat.name,
           h('span', { class: 'tag' }, seat.type === 'cpu' ? 'CPU' : 'Human'),
+          v.teams && seat.team != null ? h('span', { class: `tag team${seat.team}` }, Core.teamName(seat.team)) : null,
           online && i === v.viewer ? h('span', { class: 'tag you' }, 'You') : null,
           seat.away ? h('span', { class: 'tag warn' }, 'Away') : null,
           !seat.away && offline ? h('span', { class: 'tag off' }, 'Offline') : null),
@@ -773,7 +1019,10 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   function renderPiles(v) {
     $('stock').className = 'card back' + (v.canDraw ? '' : ' empty');
     $('stockLabel').textContent = `Draw pile · ${v.stockCount}`;
-    $('discard').replaceChildren(cardEl(v.top));
+    const top = cardEl(v.top);
+    if (FB.lastTopId !== null && FB.lastTopId !== v.top.id) top.classList.add('flip');
+    FB.lastTopId = v.top.id;
+    $('discard').replaceChildren(top);
     const badge = $('suit');
     badge.textContent = `Suit ${v.activeSuit}`;
     badge.className = 'suit-badge' + (Core.isRed({ suit: v.activeSuit }) ? ' red' : '');
@@ -793,6 +1042,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     else if (v.phase === 'matchOver') msg = 'Match over.';
     else if (seat.type === 'cpu') msg = `${n} is thinking…`;
     else if (hidden) msg = `Waiting for ${n}…`;
+    else if (online && v.viewer < 0) msg = `Watching. ${n} is up.`;
     else if (online && seat.away) msg = `${n} is away. The computer is playing their turns until they come back.`;
     else if (online && seat.connected === false) msg = `${n} lost connection. The computer will play for them shortly.`;
     else if (!myTurn) msg = `Waiting for ${n}…`;
@@ -802,7 +1052,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     else msg = `${n}, nothing matches and the pile is empty. Pass.`;
     $('status').textContent = msg;
 
-    const canReplace = online && v.phase === 'playing' && seat.type === 'human' && seat.connected === false;
+    const canReplace = online && v.viewer >= 0 && v.phase === 'playing' && seat.type === 'human' && seat.connected === false;
     $('replaceBtn').classList.toggle('hidden', !canReplace);
     $('replaceBtn').textContent = `Let a computer play for ${n} now`;
   }
@@ -813,18 +1063,28 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     box.scrollTop = box.scrollHeight;
   }
 
-  function renderHand(v, { hidden, legal, hand }) {
+  function renderHand(v, { hidden, legal, hand, seat }) {
     if (hidden) {
+      FB.lastHandIds = null;
       $('handLabel').textContent = '';
       $('hand').replaceChildren(h('div', { class: 'hidden-hand' }, 'Cards are hidden until it is your turn.'));
       return;
     }
-    const seat = v.seats[v.viewer];
+    if (!seat) {
+      FB.lastHandIds = null;
+      $('handLabel').textContent = 'Watching';
+      $('hand').replaceChildren(h('div', { class: 'hidden-hand' }, 'You are watching. Cards stay hidden until the round ends.'));
+      return;
+    }
     $('handLabel').textContent = `${seat.name}'s hand · ${hand.length} card${hand.length === 1 ? '' : 's'}`;
+    const previous = FB.lastHandIds;
     $('hand').replaceChildren(...hand.map(card => {
       const ok = legal.has(card.id);
-      return cardEl(card, { playable: ok, onClick: ok ? () => playCardClick(card) : null });
+      const el = cardEl(card, { playable: ok, onClick: ok ? () => playCardClick(card) : null });
+      if (previous && !previous.has(card.id)) el.classList.add('deal');
+      return el;
     }));
+    FB.lastHandIds = new Set(hand.map(c => c.id));
   }
 
   function cardEl(card, { playable = false, onClick = null } = {}) {
@@ -849,12 +1109,39 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     return localDispatch(action);
   }
 
+  // ---------- chat (online only) ----------
+  function renderChat(v) {
+    const box = $('chatLog');
+    const msgs = v.chat || [];
+    box.replaceChildren(...(msgs.length
+      ? msgs.map(m => h('div', { class: 'msg' }, h('b', {}, `${m.from}: `), m.text))
+      : [h('div', { class: 'empty' }, 'No messages yet. Say hi!')]));
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    if (nearBottom || FB.chatCount !== msgs.length) box.scrollTop = box.scrollHeight;
+    if (FB.chatCount !== null && msgs.length > FB.chatCount) sound('chat');
+    FB.chatCount = msgs.length;
+  }
+
+  function sendChat(text) {
+    const clean = String(text || '').trim();
+    if (!clean) return;
+    if (ONLINE.room) {
+      const result = ONLINE.room.chatFrom(ONLINE.room.seats[0], clean);
+      if (!result.ok) toast(result.error);
+      return;
+    }
+    if (ONLINE.link && ONLINE.link.conn.open) ONLINE.link.conn.send({ t: 'chat', text: clean });
+    else toast("You're not connected.");
+  }
+
   // ---------- local (hot-seat) mode ----------
   function loadLocalSetup() {
     try {
       const saved = JSON.parse(localStorage.getItem(SETUP_KEY));
       if (saved && Array.isArray(saved.seats) && saved.seats.length === 4 &&
-          [2, 3, 4].includes(saved.count) && [50, 100, 200].includes(saved.target)) return saved;
+          [2, 3, 4].includes(saved.count) && [50, 100, 200].includes(saved.target)) {
+        return { cpuLevel: 'normal', teams: false, ...saved };
+      }
     } catch { /* storage unavailable: use defaults */ }
     return JSON.parse(JSON.stringify(DEFAULT_SETUP));
   }
@@ -866,6 +1153,8 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   function readSetupFromDom() {
     LOCAL.setup.count = Number($('count').value);
     LOCAL.setup.target = Number($('target').value);
+    LOCAL.setup.cpuLevel = $('cpuLevelLocal').value;
+    LOCAL.setup.teams = $('teamsLocal').value === 'teams';
     document.querySelectorAll('#seatRows input').forEach(el => {
       LOCAL.setup.seats[Number(el.dataset.i)].name = el.value.trim();
     });
@@ -897,9 +1186,11 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   function startLocalMatch() {
     readSetupFromDom();
     saveLocalSetup();
+    const level = LOCAL.setup.cpuLevel || 'normal';
     const seats = LOCAL.setup.seats.slice(0, LOCAL.setup.count).map((s, i) => ({
       name: s.name || (s.type === 'cpu' ? `CPU ${i + 1}` : `Player ${i + 1}`),
       type: s.type,
+      level,
     }));
     if (!seats.some(s => s.type === 'human')) {
       $('setupMsg').textContent = 'Pick at least one human player.';
@@ -907,10 +1198,13 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     }
     $('setupMsg').textContent = '';
     APP.mode = 'local';
-    LOCAL.game = Core.newMatch(seats, LOCAL.setup.target);
+    APP.watching = false;
+    const teams = LOCAL.setup.teams && seats.length === 4;
+    LOCAL.game = Core.newMatch(seats, LOCAL.setup.target, { teams });
     LOCAL.viewer = seats.findIndex(s => s.type === 'human');
     LOCAL.hideHand = false;
     LOCAL.lastTurn = -1;
+    resetFeedback();
     showScreen('game');
     localAfterChange();
   }
@@ -987,6 +1281,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   function showHostView(view) {
     ONLINE.view = view;
     renderOnline();
+    if (ONLINE.room) listingTick(); // a change (such as making the room public) shows on the list straight away
   }
 
   // The host's room is saved after every change, so a reloaded page can reopen it under the same code.
@@ -1074,11 +1369,14 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
         clearTimeout(timer);
         setBanner('');
         APP.mode = 'online';
+        APP.watching = false;
+        resetFeedback();
         ONLINE.room = room;
         ONLINE.peer = peer;
         ONLINE.beat = setInterval(() => room.heartbeat(), HEARTBEAT_MS);
         touchHostLock();
         ONLINE.lock = setInterval(touchHostLock, 2000);
+        startListing();
         room.refresh(); // shows the lobby, and saves the room
         resolve();
       });
@@ -1087,6 +1385,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
         conn.on('close', () => room.disconnected(conn));
       });
       peer.on('error', e => {
+        if (e.type === 'peer-unavailable') return; // (only the public list asks for a peer that is not there)
         if (!opened) {
           clearTimeout(timer);
           const taken = e.type === 'unavailable-id';
@@ -1108,6 +1407,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     const peer = ONLINE.peer;
     clearInterval(ONLINE.beat);
     clearInterval(ONLINE.lock);
+    stopListing();
     ONLINE.room = null;
     ONLINE.peer = null;
     ONLINE.beat = null;
@@ -1132,9 +1432,151 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     else toast("You're not connected. Trying to reconnect…");
   }
 
+  // ---------- public list: the host's side ----------
+  // The room's info is sent to whoever holds the public list. The first public host to find the list
+  // free takes it over (the "keeper"). If the keeper leaves, the next public host to announce takes over.
+  function startListing() {
+    if (LISTING.timer) return;
+    LISTING.timer = setInterval(listingTick, ANNOUNCE_MS);
+    listingTick();
+  }
+
+  function stopListing() {
+    clearInterval(LISTING.timer);
+    LISTING.timer = null;
+    releaseKeeper();
+    if (LISTING.link) { try { LISTING.link.close(); } catch { /* already gone */ } }
+    LISTING.link = null;
+    LISTING.linkPending = false;
+  }
+
+  function releaseKeeper() {
+    if (LISTING.keeper) { try { LISTING.keeper.destroy(); } catch { /* already gone */ } }
+    LISTING.keeper = null;
+  }
+
+  function listingTick() {
+    const room = ONLINE.room;
+    if (!room || room.closed) return;
+    if (!room.isPublic) { releaseKeeper(); return; }
+    const info = room.publicInfo();
+    if (LISTING.keeper && LISTING.keeper.open) { LISTING.board.announce(info); return; }
+    if (!LISTING.keeper && !LISTING.claiming) claimListing();
+    if (LISTING.link && LISTING.link.open) { LISTING.link.send({ t: 'announce', info }); return; }
+    if (!LISTING.linkPending && ONLINE.peer) sendToListing();
+  }
+
+  function claimListing() {
+    LISTING.claiming = true;
+    const p = new Peer(LOBBY_ID, peerOpts());
+    p.on('open', () => {
+      LISTING.claiming = false;
+      LISTING.keeper = p;
+      if (LISTING.link) { try { LISTING.link.close(); } catch { /* already gone */ } LISTING.link = null; }
+      listingTick(); // put our own room on the list straight away
+    });
+    p.on('connection', conn => {
+      conn.on('data', msg => {
+        if (msg.t === 'announce') LISTING.board.announce(msg.info);
+        else if (msg.t === 'list') conn.send({ t: 'list', rooms: LISTING.board.list() });
+      });
+    });
+    p.on('disconnected', () => {
+      if (!p.destroyed) setTimeout(() => { try { p.reconnect(); } catch { /* try again next time */ } }, 2000);
+    });
+    p.on('error', () => {
+      LISTING.claiming = false;
+      try { p.destroy(); } catch { /* already gone */ }
+    });
+  }
+
+  function sendToListing() {
+    LISTING.linkPending = true;
+    const conn = ONLINE.peer.connect(LOBBY_ID, { reliable: true, serialization: 'json' });
+    const done = () => { LISTING.linkPending = false; };
+    conn.on('open', () => {
+      done();
+      LISTING.link = conn;
+      if (ONLINE.room) conn.send({ t: 'announce', info: ONLINE.room.publicInfo() });
+    });
+    conn.on('close', () => { done(); if (LISTING.link === conn) LISTING.link = null; });
+    conn.on('error', () => { done(); });
+    setTimeout(() => { if (!conn.open && LISTING.linkPending) { done(); try { conn.close(); } catch { /* already gone */ } } }, 8000);
+  }
+
+  // ---------- public list: the browser's side ----------
+  async function loadPublicRooms() {
+    if (BROWSE.busy) return; // one lookup at a time (the list refreshes itself)
+    BROWSE.busy = true;
+    if (!$('browseList').children.length) $('browseList').replaceChildren(h('p', { class: 'muted' }, 'Looking for public games…'));
+    $('browseMsg').textContent = '';
+    if (!(await loadPeerLib())) {
+      BROWSE.busy = false;
+      $('browseMsg').textContent = LIB_FAIL;
+      return;
+    }
+    const p = new Peer(undefined, peerOpts());
+    let done = false;
+    const finish = (rooms, message) => {
+      if (done) return;
+      done = true;
+      BROWSE.busy = false;
+      clearTimeout(timer);
+      try { p.destroy(); } catch { /* already gone */ }
+      if (rooms) renderPublicRooms(rooms);
+      $('browseMsg').textContent = message || '';
+    };
+    const timer = setTimeout(() => finish(null, "Couldn't reach the public list. Check your internet connection and try again."), 12000);
+    p.on('error', e => {
+      if (e.type === 'peer-unavailable') finish([], ''); // nobody is holding the list yet: no public games
+      else finish(null, "Couldn't reach the public list. Try again.");
+    });
+    p.on('open', () => {
+      const conn = p.connect(LOBBY_ID, { reliable: true, serialization: 'json' });
+      conn.on('open', () => conn.send({ t: 'list' }));
+      conn.on('data', msg => { if (msg.t === 'list') finish(msg.rooms || []); });
+    });
+  }
+
+  function renderPublicRooms(rooms) {
+    if (!rooms.length) {
+      $('browseList').replaceChildren(h('p', { class: 'muted' },
+        'No public games right now. Create a room, then choose Make public in its lobby.'));
+      return;
+    }
+    $('browseList').replaceChildren(...rooms.map(r => h('div', { class: 'browse-room' },
+      h('div', { class: 'browse-info' },
+        h('div', { class: 'name' }, `${r.name}'s room · `, h('span', { class: 'code' }, r.code)),
+        h('div', { class: 'muted small' },
+          `${r.humans + r.cpus} of 4 seats · ${r.started ? 'in progress' : 'waiting for players'}`
+          + `${r.started && r.cpus ? ` · ${r.cpus} free seat${r.cpus > 1 ? 's' : ''}` : ''}`
+          + `${r.teams ? ' · teams' : ''}${r.locked ? ' · locked' : ''}`
+          + `${r.spectators ? ` · ${r.spectators} watching` : ''}`)),
+      h('div', { class: 'actions' },
+        (!r.started && !r.locked && r.humans + r.cpus < 4) || (r.started && r.cpus > 0)
+          ? h('button', { class: 'btn small primary', onclick: () => joinFromBrowse(r.code, false) }, r.started ? 'Take a seat' : 'Join')
+          : null,
+        h('button', { class: 'btn small', onclick: () => joinFromBrowse(r.code, true) }, 'Watch')))));
+  }
+
+  async function joinFromBrowse(code, watch) {
+    const name = $('browseName').value.trim();
+    rememberName(name);
+    try {
+      await joinRoom(code, name, {
+        spectate: watch,
+        status: n => { $('browseMsg').textContent = n === 1 ? 'Joining…' : `Still trying (${n} of ${JOIN_ATTEMPTS})…`; },
+      });
+      $('browseMsg').textContent = '';
+    } catch (err) {
+      $('browseMsg').textContent = err.message;
+    }
+  }
+
   // ---------- online: the guest's side ----------
-  // Connects to a room's host and sends the first message (join, or resume with a token). Resolves once the host
-  // has given us a seat. Rejects with a message: err.retry = worth trying again, err.gone = the seat is no longer ours.
+  // Connects to a room's host and sends the first message (join, watch, or resume with a token). Resolves once
+  // the host has given us a seat (or a watching spot). Rejects with a message: err.retry = worth trying again,
+  // err.gone = the seat is no longer ours.
   function openGuest(code, hello) {
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -1162,9 +1604,11 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
               settled = true;
               clearTimeout(timer);
               ONLINE.cancelPending = null;
-              ONLINE.seat = { code, token: msg.token };
+              ONLINE.seat = { code, token: msg.token, spectator: !!msg.spectator };
               ONLINE.link = { peer, conn, beat: guestBeat(conn) };
               APP.mode = 'online';
+              APP.watching = !!msg.spectator;
+              resetFeedback();
               saveSeat(code, msg.token);
               return resolve();
             }
@@ -1200,11 +1644,17 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     }
   }
 
-  function joinRoom(code, name) {
-    return withRetries(
-      () => connectAsGuest(code, { t: 'join', name }),
-      n => setOnlineMsg(n === 1 ? 'Joining…' : `Still trying (${n} of ${JOIN_ATTEMPTS})…`),
+  async function joinRoom(code, name, opts = {}) {
+    const status = opts.status || (n => setOnlineMsg(n === 1 ? 'Joining…' : `Still trying (${n} of ${JOIN_ATTEMPTS})…`));
+    const result = await withRetries(
+      () => connectAsGuest(code, { t: 'join', name, spectate: !!opts.spectate }),
+      status,
     );
+    // Joining a game in progress with no free computer seat puts you in as a watcher.
+    if (!opts.spectate && ONLINE.seat && ONLINE.seat.spectator) {
+      toast('No seat is free right now, so you are watching. You can take a seat when a computer player is free.');
+    }
+    return result;
   }
 
   // Pings the host every few seconds. If the host stays silent for too long, the connection counts as dropped
@@ -1266,6 +1716,7 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
     ONLINE.link = null;
     ONLINE.seat = null;
     ONLINE.view = null;
+    APP.watching = false;
     if (forget) forgetSeat();
     if (link) {
       clearInterval(link.beat);
@@ -1298,11 +1749,13 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
       if (modalKey !== 'rules') closeModal();
       renderLobby(v);
       showScreen('lobby');
+      renderChat(v);
       return;
     }
     showScreen('game');
     renderGame(v, { hidden: false, online: true });
     syncModals(v, null);
+    renderChat(v);
   }
 
   function inviteLink(code) {
@@ -1322,20 +1775,32 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
       : 'Send friends this link. They can also open the game, choose Play online with friends, and type the code.';
     $('lobbySeats').replaceChildren(...v.seats.map((seat, i) => h('div', { class: 'lobby-seat' },
       h('span', { class: 'dot' + (seat.connected ? ' on' : '') }),
-      h('span', { class: 'name' }, avatarEl(seat.name, i), seat.name),
-      h('span', { class: 'tag' }, i === 0 ? 'Host' : seat.type === 'cpu' ? 'CPU' : 'Player'),
-      i === v.viewer ? h('span', { class: 'tag you' }, 'You') : null,
+      h('span', { class: 'name' }, avatarEl(seat.name, i), seat.name,
+        h('span', { class: 'tag' }, i === 0 ? 'Host' : seat.type === 'cpu' ? 'CPU' : 'Player'),
+        v.teams ? h('span', { class: `tag team${i % 2}` }, Core.teamName(i % 2)) : null,
+        i === v.viewer ? h('span', { class: 'tag you' }, 'You') : null),
       seat.type === 'human' && seat.connected && seat.ping != null
         ? h('span', { class: 'ping ' + pingClass(seat.ping) }, `${seat.ping} ms`) : null,
       v.host && i > 0 ? h('button', { class: 'btn small', onclick: () => onlineDispatch({ type: 'removeSeat', seat: i }) }, 'Remove') : null)));
-    $('lockNote').textContent = v.locked ? 'The room is locked: nobody new can join.' : '';
+    const notes = [];
+    if (v.locked) notes.push('The room is locked: nobody new can join as a player.');
+    if (v.spectators) notes.push(`${v.spectators} watching.`);
+    $('lockNote').textContent = notes.join(' ');
     $('hostControls').classList.toggle('hidden', !v.host);
-    $('guestNote').classList.toggle('hidden', v.host);
+    $('guestNote').textContent = v.spectator
+      ? "You're watching. The game starts when the host is ready."
+      : 'Waiting for the host to start the game.';
     $('lobbyTarget').value = String(v.target);
+    $('cpuLevel').value = v.cpuLevel || 'normal';
     $('addCpuBtn').disabled = v.seats.length >= 4;
+    $('teamsBtn').textContent = v.teams ? 'Play solo' : 'Play as teams';
+    $('teamsBtn').disabled = !v.teams && v.seats.length !== 4;
     $('lockBtn').textContent = v.locked ? 'Unlock room' : 'Lock room';
+    $('publicBtn').textContent = v.isPublic ? 'Make private' : 'Make public';
     $('startOnlineBtn').disabled = v.seats.length < 2;
-    $('startHint').textContent = v.seats.length < 2 ? 'Add a computer player, or wait for a friend to join.' : '';
+    $('startHint').textContent = v.seats.length < 2
+      ? 'Add a computer player, or wait for a friend to join.'
+      : (!v.teams && v.seats.length === 4 ? 'Tip: choose "Play as teams" to play two against two.' : '');
   }
 
   // ---------- saved names and seats ----------
@@ -1368,13 +1833,17 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   function setJoining(on) {
     $('cancelJoinBtn').classList.toggle('hidden', !on);
     $('joinBtn').disabled = on;
+    $('watchBtn').disabled = on;
     $('createBtn').disabled = on;
   }
 
   // ---------- wiring ----------
   $('modeLocal').onclick = () => showLocalSetup();
   $('modeOnline').onclick = () => showOnlineScreen();
+  $('modeBrowse').onclick = () => showBrowse();
   $('onlineBack').onclick = () => showMenu();
+  $('browseBack').onclick = () => showMenu();
+  $('browseRefresh').onclick = () => loadPublicRooms();
   $('setupBack').onclick = () => showMenu();
 
   $('reopenBtn').onclick = async () => {
@@ -1431,6 +1900,23 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
       setJoining(false);
     }
   };
+
+  $('watchBtn').onclick = async () => {
+    const code = $('joinCode').value.trim().toUpperCase();
+    const name = $('onlineName').value.trim();
+    if (!/^[A-Z0-9]{4}$/.test(code)) return setOnlineMsg('Room codes have 4 letters or numbers.');
+    rememberName(name);
+    setJoining(true);
+    try {
+      await joinRoom(code, name, { spectate: true });
+      setOnlineMsg('');
+    } catch (err) {
+      setOnlineMsg(err.message);
+    } finally {
+      setJoining(false);
+    }
+  };
+
   $('cancelJoinBtn').onclick = () => { ONLINE.cancelled = true; if (ONLINE.cancelPending) ONLINE.cancelPending(); };
   $('joinCode').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
 
@@ -1445,9 +1931,12 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   };
 
   $('addCpuBtn').onclick = () => onlineDispatch({ type: 'addCpu' });
+  $('teamsBtn').onclick = () => onlineDispatch({ type: 'setTeams', teams: !(ONLINE.view && ONLINE.view.teams) });
   $('lockBtn').onclick = () => onlineDispatch({ type: 'lock', locked: !(ONLINE.view && ONLINE.view.locked) });
+  $('publicBtn').onclick = () => onlineDispatch({ type: 'setPublic', isPublic: !(ONLINE.view && ONLINE.view.isPublic) });
   $('startOnlineBtn').onclick = () => onlineDispatch({ type: 'start' });
   $('lobbyTarget').onchange = e => onlineDispatch({ type: 'setTarget', target: Number(e.target.value) });
+  $('cpuLevel').onchange = e => onlineDispatch({ type: 'setCpuLevel', level: e.target.value });
 
   $('count').onchange = () => { readSetupFromDom(); renderSetupRows(); };
   $('startBtn').onclick = startLocalMatch;
@@ -1461,6 +1950,25 @@ select:focus, input:focus { outline: none; border-color: var(--gold); box-shadow
   $('passBtn').onclick = () => dispatch({ type: 'pass' });
   $('stock').onclick = () => { if (!$('drawBtn').disabled) dispatch({ type: 'draw' }); };
   $('replaceBtn').onclick = () => onlineDispatch({ type: 'replace', seat: ONLINE.view.current });
+
+  $('chatForm').onsubmit = e => {
+    e.preventDefault();
+    const text = $('chatInput').value;
+    if (!text.trim()) return;
+    sendChat(text);
+    $('chatInput').value = '';
+  };
+  $('quickChat').replaceChildren(...QUICK.map(text => h('button', { type: 'button', onclick: () => sendChat(text) }, text)));
+
+  $('soundBtn').onclick = () => {
+    SOUND.muted = !SOUND.muted;
+    try { localStorage.setItem(MUTE_KEY, SOUND.muted ? '1' : '0'); } catch { /* ignore */ }
+    updateSoundButton();
+    if (!SOUND.muted) sound('chat');
+  };
+  updateSoundButton();
+  // Browsers only allow sound after a click or key press: the first one switches the sound on.
+  document.addEventListener('pointerdown', () => { audioContext(); }, { once: true });
 
   // Closing the page while hosting: warn first. The room itself is kept, so a reload can reopen it.
   window.addEventListener('beforeunload', e => {

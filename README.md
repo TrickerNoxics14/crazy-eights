@@ -14,6 +14,13 @@ Things to know:
 - **Dropped out?** Reopen the game and click **Rejoin room XXXX**. Your seat and cards are kept.
 - **No one holds up the table:** if a player is gone for about 15 seconds, the computer plays their turns until they come back.
 - The host can **lock the room** in the lobby so nobody new can join, even with the code.
+- **Join a game in progress:** anyone with the code can take over a free computer seat in a running game. If no seat is free, they watch instead.
+- **Watch:** watchers see the table and can chat, but have no cards and can't play.
+- **Teams:** with four players, choose **Play as teams**. Seats 1 & 3 play against seats 2 & 4, and the winning team scores the other team's cards only.
+- **Computer level:** Easy, Normal, or Hard. Hard looks ahead and plays noticeably better.
+- **Public games:** choose **Make public** in your lobby, and anyone can find your room under **Browse public games**. A game can be joined while it's running if a seat is free.
+- **Chat:** type a message or tap a quick reply such as Nice!, GG or 👍. Everyone in the room sees it.
+- **Sound:** card, pass, draw and win sounds. Use the 🔊 button in the top bar to mute.
 - Each seat shows its connection speed (green is fast, yellow is OK, red is slow).
 - Joining retries automatically if the connection is slow, and you can press **Cancel** while it tries.
 - Players connect straight to each other's browsers (WebRTC). The matchmaking that introduces them uses PeerJS's free public service, the same one as the other games. Strict networks (some VPNs and school Wi-Fi) can block the connection.
